@@ -15,13 +15,8 @@ class Login extends BasePage
 {
     protected static string $view = 'filament.pages.auth.login';
 
-    public function getHeading(): string | Htmlable
-    {
-        return __("Sistem Antrian Wakaf");
-    }
-
     public function getSubheading(): string | Htmlable | null
     {
-        return __('Silakan login untuk mengakses dashboard admin');
+        return __('Silakan login untuk mengakses dashboard');
     }
 }

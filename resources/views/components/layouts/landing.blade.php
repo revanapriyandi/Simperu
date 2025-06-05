@@ -236,7 +236,7 @@
         }
     </style>
     @filamentStyles
-    @vite('resources/css/app.css')
+    @vite(['resources/css/app.css'])
 </head>
 
 <body class="bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-300"

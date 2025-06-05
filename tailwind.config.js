@@ -1,8 +1,8 @@
-import preset from "./vendor/filament/support/tailwind.config.preset";
+import { defineConfig } from "vite";
+import laravel, { refreshPaths } from "laravel-vite-plugin";
 
-export default {
+export default defineConfig({
     darkMode: "class",
-    presets: [preset],
     theme: {
         extend: {
             colors: {
@@ -56,4 +56,18 @@ export default {
         "./resources/views/**/*.blade.php",
         "./vendor/filament/**/*.blade.php",
     ],
-};
+    plugins: [
+        laravel({
+            input: ["resources/css/app.css", "resources/js/app.js"],
+            refresh: [
+                ...refreshPaths,
+                "app/Filament/**",
+                "app/Forms/Components/**",
+                "app/Livewire/**",
+                "app/Infolists/Components/**",
+                "app/Providers/Filament/**",
+                "app/Tables/Columns/**",
+            ],
+        }),
+    ],
+});
