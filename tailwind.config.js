@@ -1,15 +1,8 @@
-import defaultTheme from "tailwindcss/defaultTheme";
+import preset from "./vendor/filament/support/tailwind.config.preset";
 
-/** @type {import('tailwindcss').Config} */
 export default {
     darkMode: "class",
-    content: [
-        "./vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php",
-        "./storage/framework/views/*.php",
-        "./resources/**/*.blade.php",
-        "./resources/**/*.js",
-        "./resources/**/*.vue",
-    ],
+    presets: [preset],
     theme: {
         extend: {
             colors: {
@@ -29,7 +22,6 @@ export default {
                 gold: { DEFAULT: "#F59E0B", 500: "#F59E0B", 600: "#D97706" },
             },
             fontFamily: {
-                sans: ["Figtree", ...defaultTheme.fontFamily.sans],
                 inter: ["Inter", "sans-serif"],
                 poppins: ["Poppins", "sans-serif"],
             },
@@ -59,9 +51,9 @@ export default {
             },
         },
     },
-    plugins: [
-        require("@tailwindcss/forms"),
-        require("@tailwindcss/typography"),
-        require("@tailwindcss/aspect-ratio"),
+    content: [
+        "./app/Filament/**/*.php",
+        "./resources/views/**/*.blade.php",
+        "./vendor/filament/**/*.blade.php",
     ],
 };

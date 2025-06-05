@@ -11,13 +11,9 @@
                 <a href="#beranda"
                     class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-accent-400 transition-colors">Beranda</a>
                 <a href="#tentang"
-                    class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-accent-400 transition-colors">Tentang
-                    SIMPERU</a>
+                    class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-accent-400 transition-colors">Tentang</a>
                 <a href="#manfaat"
                     class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-accent-400 transition-colors">Manfaat</a>
-                <a href="#alur"
-                    class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-accent-400 transition-colors">Alur
-                    Sistem</a>
                 <a href="#layanan"
                     class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-accent-400 transition-colors">Layanan
                     Unggulan</a>

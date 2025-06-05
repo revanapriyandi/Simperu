@@ -74,6 +74,15 @@
             background: #059669;
         }
 
+        /* Hero Background Slide Styles */
+        .hero-bg-slide {
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+            position: relative;
+        }
+
         /* Swiper custom navigation for Hero */
         .heroSwiper .swiper-button-next,
         .heroSwiper .swiper-button-prev {
