@@ -73,6 +73,9 @@ class TelegramController extends Controller
     public function webhook(Request $request)
     {
         $updates = Telegram::getWebhookUpdate();
+        Log::info('Telegram Webhook', [
+            'update' => $updates->toArray(),
+        ]);
 
         try {
             $messageText = $updates->getMessage()->getText();
