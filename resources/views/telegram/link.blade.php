@@ -113,6 +113,8 @@
                         window.location.href = '/resident';
                     } else {
                         alert('❌ Telegram belum terhubung. Silakan ikuti langkah-langkah di atas.');
+
+                        window.location.href = '{{ $telegramUrl }}';
                     }
                 })
                 .catch(error => {

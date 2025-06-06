@@ -57,7 +57,7 @@ class PerformanceMonitorService
                     SUM(CASE WHEN status IN ("submitted", "in_review") THEN 1 ELSE 0 END) as pending_complaints,
                     SUM(CASE WHEN status = "resolved" THEN 1 ELSE 0 END) as resolved_complaints
                 '))
-                ->where('submitted_by', $userId)
+                ->where('user_id', $userId)
                 ->first();
 
             // Get active announcements count with limit
@@ -81,7 +81,6 @@ class PerformanceMonitorService
     {
         return self::cacheStats('latest_announcements', function () {
             return DB::table('announcements')
-                ->select(['id', 'title', 'type', 'publish_date', 'excerpt'])
                 ->where('is_active', true)
                 ->where('publish_date', '<=', now())
                 ->orderBy('publish_date', 'desc')

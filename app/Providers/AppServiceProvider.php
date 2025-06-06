@@ -15,6 +15,8 @@ use Filament\Support\Facades\FilamentIcon;
 use Filament\Support\Facades\FilamentView;
 use Filament\Support\Facades\FilamentColor;
 use Filament\Tables\Actions\Action as TableAction;
+use Illuminate\Support\Facades\URL as FacadesURL;
+use Soap\Url;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -50,5 +52,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Page::formActionsAlignment(Alignment::Right);
+
+        FacadesURL::forceScheme('https');
     }
 }

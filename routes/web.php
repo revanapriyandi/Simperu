@@ -6,8 +6,7 @@ use App\Http\Controllers\TelegramController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', LandingPage::class)
-    ->name('landing-page')
-    ->middleware(['web', 'guest']);
+    ->name('landing-page');
 
 // Telegram routes
 Route::prefix('telegram')->group(function () {

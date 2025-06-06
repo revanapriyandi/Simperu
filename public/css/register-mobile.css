@@ -1,0 +1,181 @@
+/* Mobile-first responsive design for registration form */
+
+/* Base mobile styles */
+@media (max-width: 640px) {
+    /* Prevent zoom on input focus for iOS */
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="password"],
+    select,
+    textarea {
+        font-size: 16px !important;
+        transform: scale(1);
+    }
+
+    /* Wizard step labels on mobile */
+    .fi-wi-step-label {
+        font-size: 0.75rem;
+        line-height: 1.2;
+    }
+
+    /* Make form fields stack properly on mobile */
+    .fi-fo-grid-cols-2 {
+        grid-template-columns: 1fr !important;
+    }
+
+    .fi-fo-grid-cols-3 {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Button improvements for mobile */
+    .fi-btn {
+        min-height: 48px;
+        font-size: 16px;
+        border-radius: 12px;
+    }
+
+    /* Touch-friendly spacing */
+    .fi-fo-field-wrp {
+        margin-bottom: 1.5rem;
+    }
+
+    /* Progress indicators mobile optimization */
+    .progress-step {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    /* Card padding adjustments */
+    .bg-white\/80 {
+        padding: 1rem !important;
+    }
+
+    /* Wizard navigation mobile improvements */
+    .fi-wi-step {
+        padding: 0.5rem;
+        min-height: 44px;
+    }
+
+    .fi-wi-step-icon {
+        width: 24px;
+        height: 24px;
+    }
+}
+
+/* Tablet styles */
+@media (min-width: 641px) and (max-width: 1024px) {
+    .fi-fo-grid-cols-3 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .bg-white\/80 {
+        padding: 2rem !important;
+    }
+}
+
+/* Desktop styles */
+@media (min-width: 1025px) {
+    .bg-white\/80 {
+        padding: 2.5rem !important;
+    }
+}
+
+/* Enhanced accessibility */
+@media (prefers-reduced-motion: reduce) {
+    .animate-blob,
+    .transition-all,
+    .transform,
+    .hover\:scale-105 {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .bg-gradient-to-br {
+        background: linear-gradient(
+            to bottom right,
+            #1e293b,
+            #0f172a
+        ) !important;
+    }
+
+    .bg-white\/80 {
+        background: rgba(30, 41, 59, 0.9) !important;
+        color: #f1f5f9;
+    }
+
+    .text-gray-600 {
+        color: #94a3b8 !important;
+    }
+
+    .text-gray-900 {
+        color: #f1f5f9 !important;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .fi-input input,
+    .fi-select select {
+        border: 2px solid #000 !important;
+    }
+
+    .fi-btn-primary {
+        background: #000 !important;
+        color: #fff !important;
+        border: 2px solid #fff !important;
+    }
+}
+
+/* Print styles */
+@media print {
+    .animate-blob,
+    .bg-gradient-to-br,
+    .backdrop-blur-sm,
+    .shadow-xl {
+        display: none !important;
+    }
+
+    .bg-white\/80 {
+        background: white !important;
+        box-shadow: none !important;
+    }
+}
+
+/* Focus styles for keyboard navigation */
+.fi-input input:focus,
+.fi-select select:focus,
+.fi-btn:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* Loading states */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #ccc;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

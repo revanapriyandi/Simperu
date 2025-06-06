@@ -2,11 +2,6 @@
 
 @config './tailwind.config.js';
 
-/* Custom sidebar styling */
-.fi-sidebar {
-    border-right: 1px solid rgb(229 231 235);
-}
-
 /* Custom welcome banner */
 .welcome-banner {
     background: linear-gradient(135deg, #059669 0%, #047857 100%);

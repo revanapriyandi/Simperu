@@ -1,11 +1,3 @@
-<div>
-    <div class="mt-4 text-center border-t pt-2">
-        <p class="text-sm text-gray-600">
-            &copy; {{ date('Y') }}
-            <a href="" class="text-primary-600 hover:text-primary-900">
-                {{ config('app.name') }}
-            </a>
-            . All rights reserved.
-        </p>
-    </div>
+<div class="text-center mt-8 text-sm text-gray-500">
+    <p>&copy; {{ date('Y') }} {{ config('app.name') }}. Semua hak dilindungi.</p>
 </div>

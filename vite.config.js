@@ -18,4 +18,17 @@ export default defineConfig({
             ],
         }),
     ],
+    // Tambahkan konfigurasi ini untuk mengatasi error CJS
+    optimizeDeps: {
+        include: ["axios"],
+    },
+    build: {
+        commonjsOptions: {
+            include: [/axios/, /node_modules/],
+        },
+    },
+    // Tambahkan ini jika masih ada error
+    ssr: {
+        noExternal: ["axios"],
+    },
 });

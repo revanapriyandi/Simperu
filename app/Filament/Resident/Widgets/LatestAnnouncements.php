@@ -21,11 +21,9 @@ class LatestAnnouncements extends BaseWidget
         return $table
             ->query(
                 Announcement::query()
-                    ->select(['id', 'title', 'type', 'publish_date', 'excerpt']) // Only select needed columns
                     ->where('is_active', true)
                     ->where('publish_date', '<=', now())
                     ->latest('publish_date')
-                    ->limit(10) // Increase limit slightly but keep it reasonable
             )
             ->paginated(false) // Disable pagination for widget
             ->poll('60s') // Reduce polling frequency
@@ -35,8 +33,9 @@ class LatestAnnouncements extends BaseWidget
                     ->searchable()
                     ->limit(60)
                     ->weight('bold'),
-                Tables\Columns\BadgeColumn::make('type')
+                Tables\Columns\TextColumn::make('type')
                     ->label('Jenis')
+                    ->badge()
                     ->colors([
                         'info' => 'info',
                         'success' => 'urgent',
