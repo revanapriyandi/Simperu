@@ -42,8 +42,11 @@ class TelegramController extends Controller
         $telegramBotUrl = config('services.telegram-bot-api.bot_url');
 
         $userTempCode = Str::random(35);
-        Cache::store('telegram')
-            ->put($userTempCode, $user->id, $seconds = 120);
+        //check cache for existing user temp code
+        if (Cache::store('telegram')->has($userTempCode)) {
+            $userTempCode = Str::random(35);
+        }
+        Cache::store('telegram')->put($userTempCode, $user->id, now()->addMinutes(30));
 
         $telegramUrl = $telegramBotUrl . '?start=' . $userTempCode;
 
