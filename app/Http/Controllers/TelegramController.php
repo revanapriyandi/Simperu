@@ -96,7 +96,10 @@ class TelegramController extends Controller
             'user_temp_code' => $userTempCode,
         ]);
         // Get the User ID from the cache using the temp code as key.
-        $userId = Cache::store('telegram')->pull($userTempCode);
+        $userId = Cache::store('telegram')->get($userTempCode);
+        Log::info('Telegram Webhook', [
+            'user_id' => $userId,
+        ]);
         $user = User::find($userId);
 
         // Get Telegram ID from the request.
