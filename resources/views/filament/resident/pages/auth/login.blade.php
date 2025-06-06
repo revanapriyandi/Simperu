@@ -13,13 +13,11 @@
             </div>
         </div>
 
-        {{ $this->form }}
+        <x-filament-panels::form id="form" wire:submit="authenticate">
+            {{ $this->form }}
 
-        <div class="mt-6">
-            <x-filament::button type="submit" form="authenticate" class="fi-btn-size-md w-full">
-                Masuk
-            </x-filament::button>
-        </div>
+            <x-filament-panels::form.actions :actions="$this->getCachedFormActions()" :full-width="$this->hasFullWidthFormActions()" />
+        </x-filament-panels::form>
 
         <div class="mt-6 text-center">
             <p class="text-sm text-gray-600 dark:text-gray-400">
