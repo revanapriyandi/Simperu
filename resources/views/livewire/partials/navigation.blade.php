@@ -19,9 +19,9 @@
                     Unggulan</a>
                 <a href="#kontak"
                     class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-accent-400 transition-colors">Kontak</a>
-                <a href="/admin"
+                <a href="/resident"
                     class="ml-2 px-4 py-2 rounded-md text-sm font-medium text-primary-700 dark:text-gray-200 bg-primary-100 dark:bg-gray-700 hover:bg-primary-200 dark:hover:bg-gray-600 transition-colors">Masuk</a>
-                <a href="/admin/register"
+                <a href="/resident/register"
                     class="px-4 py-2 rounded-md text-sm font-medium text-white bg-accent-500 hover:bg-accent-600 transition-colors">Daftar</a>
                 <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode)"
                     title="Toggle Dark Mode"
@@ -79,8 +79,7 @@
                 <a href="#beranda" @click="mobileMenuOpen = false"
                     class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-accent-400">Beranda</a>
                 <a href="#tentang" @click="mobileMenuOpen = false"
-                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-accent-400">Tentang
-                    SIMPERU</a>
+                    class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-accent-400">Tentang</a>
                 <a href="#manfaat" @click="mobileMenuOpen = false"
                     class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-accent-400">Manfaat</a>
                 <a href="#alur" @click="mobileMenuOpen = false"
@@ -93,11 +92,11 @@
                     class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:bg-primary-50 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-accent-400">Kontak</a>
             </div>
             <div class="py-6 px-5 space-y-4">
-                <a href="/admin/register"
+                <a href="/resident/register"
                     class="block w-full text-center px-4 py-2 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-accent-500 hover:bg-accent-600">Daftar</a>
                 <p class="mt-6 text-center text-base font-medium text-gray-500 dark:text-gray-400">
                     Sudah punya akun?
-                    <a href="/admin"
+                    <a href="/resident"
                         class="text-primary-600 dark:text-accent-400 hover:text-primary-500 dark:hover:text-accent-300">
                         Masuk
                     </a>

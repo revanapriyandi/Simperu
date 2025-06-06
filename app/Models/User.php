@@ -25,12 +25,15 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerif
      *
      * @var list<string>
      */
-    protected $fillable = [];
-
-    protected $guarded = [
-        'id',
-        'created_at',
-        'updated_at',
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'phone',
+        'house_number',
+        'kk_number',
+        'role',
+        'is_active',
     ];
 
     /**
@@ -64,7 +67,15 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerif
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return true;
+        if ($panel->getId() === 'admin') {
+            return $this->role === 'admin';
+        }
+
+        if ($panel->getId() === 'resident') {
+            return $this->role === 'resident';
+        }
+
+        return false;
     }
 
     public function registerMediaConversions(?Media $media = null): void

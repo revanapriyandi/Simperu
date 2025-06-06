@@ -21,25 +21,29 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 
-class AdminPanelProvider extends PanelProvider
+class ResidentPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
         return $panel
-            ->default()
-            ->id('admin')
-            ->path('admin')
-            ->login(Login::class)
+            ->id('resident')
+            ->path('resident')
+            ->login(\App\Filament\Resident\Pages\Auth\Login::class)
+            ->registration(\App\Filament\Resident\Pages\Auth\Register::class)
+            ->passwordReset()
             ->colors([
-                'primary' => Hex::fromString('#1E3A8A'),
+                'primary' => Hex::fromString('#14532d'),
             ])
             ->sidebarWidth('16rem')
             ->brandLogoHeight('5rem')
             ->defaultThemeMode(ThemeMode::Light)
-            ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
-            ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
-            ->viteTheme('resources/css/filament/admin/theme.css')
+            ->pages([
+                \App\Filament\Resident\Pages\Dashboard::class,
+            ])
+            ->discoverResources(in: app_path('Filament/Resident/Resources'), for: 'App\\Filament\\Resident\\Resources')
+            ->discoverPages(in: app_path('Filament/Resident/Pages'), for: 'App\\Filament\\Resident\\Pages')
+            ->discoverWidgets(in: app_path('Filament/Resident/Widgets'), for: 'App\\Filament\\Resident\\Widgets')
+            ->viteTheme('resources/css/filament/resident/theme.css')
             ->databaseTransactions()
             ->sidebarCollapsibleOnDesktop()
             ->databaseNotifications()
