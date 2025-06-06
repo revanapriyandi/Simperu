@@ -53,6 +53,9 @@ class AppServiceProvider extends ServiceProvider
 
         Page::formActionsAlignment(Alignment::Right);
 
-        FacadesURL::forceScheme('https');
+        $url = parse_url(config('app.url'));
+        if ($url['scheme'] == 'https') {
+            FacadesURL::forceScheme('https');
+        }
     }
 }

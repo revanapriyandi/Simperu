@@ -35,7 +35,7 @@ return [
             'username' => env('TELEGRAM_BOT_USERNAME', 'TelegramBot'),
             'token' => env('TELEGRAM_BOT_TOKEN', 'YOUR-BOT-TOKEN'),
             'certificate_path' => env('TELEGRAM_CERTIFICATE_PATH', 'YOUR-CERTIFICATE-PATH'),
-            'webhook_url' => config('app.url') . 'api/telegram/' . env('TELEGRAM_WEBHOOK_URL', 'YOUR-BOT-WEBHOOK-URL') . '/webhook',
+            'webhook_url' => config('app.url') . 'api/telegram/' . env('TELEGRAM_BOT_WEBHOOK', 'YOUR-BOT-WEBHOOK-URL') . '/webhook',
             /*
              * @see https://core.telegram.org/bots/api#update
              */
