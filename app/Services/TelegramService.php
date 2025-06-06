@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 
 class TelegramService
 {
-    private string $botToken;
+    private ?string $botToken;
     private string $baseUrl;
 
     public function __construct()
