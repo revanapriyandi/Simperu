@@ -2,10 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Exception;
 use App\Models\User;
+use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use Filament\Facades\Filament;
 use App\Services\TelegramService;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Filament\Notifications\Notification;
+use Telegram\Bot\Laravel\Facades\Telegram;
+use Filament\Notifications\Actions\Action as NotificationAction;
 
 class TelegramController extends Controller
 {
@@ -31,8 +39,27 @@ class TelegramController extends Controller
             return redirect()->route('filament.resident.pages.dashboard');
         }
 
-        $botUsername = config('services.telegram.bot_username', 'your_bot_username');
-        $telegramUrl = "https://t.me/{$botUsername}?start=" . base64_encode($user->id);
+        $telegramBotUrl = config('services.telegram-bot-api.bot_url');
+
+        $userTempCode = Str::random(35);
+        Cache::store('telegram')
+            ->put($userTempCode, $user->id, $seconds = 120);
+
+        $telegramUrl = $telegramBotUrl . '?start=' . $userTempCode;
+
+        Notification::make()
+            ->title(__('Notifikasi Telegram'))
+            ->body(__('Silakan buka Telegram dan klik tautan di atas untuk mengaktifkan notifikasi.'))
+            ->actions([
+                NotificationAction::make('open')
+                    ->label(__('Buka Telegram'))
+                    ->url($telegramUrl)
+                    ->openUrlInNewTab()
+                    ->icon('tabler-brand-telegram')
+                    ->color('success'),
+            ])
+            ->success()
+            ->send();
 
         return view('telegram.link', compact('telegramUrl', 'user'));
     }
@@ -42,32 +69,46 @@ class TelegramController extends Controller
      */
     public function webhook(Request $request)
     {
-        $data = $request->all();
+        $updates = Telegram::getWebhookUpdate();
 
-        // Verify the request comes from Telegram (basic check)
-        if (!$this->verifyTelegramRequest($request)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+        try {
+            $messageText = $updates->getMessage()->getText();
+        } catch (Exception $e) {
+            return response()->json([
+                'code' => $e->getCode(),
+                'message' => 'Accepted with error: \'' . $e->getMessage() . '\'',
+            ], 202);
+        }
+        Log::info('Telegram Webhook', [
+            'message' => $messageText,
+        ]);
+        // Check if the message matches the expected pattern.
+        if (! Str::of($messageText)->test('/^\/start\s[A-Za-z0-9]{35}$/')) {
+            return response('Accepted', 202);
         }
 
-        // Handle /start command with user ID
-        if (isset($data['message']['text']) && str_starts_with($data['message']['text'], '/start ')) {
-            $startParam = substr($data['message']['text'], 7); // Remove '/start '
+        // Cleanup the string
+        $userTempCode = Str::of($messageText)->remove('/start ')->toString();
+        Log::info('Telegram Webhook', [
+            'user_temp_code' => $userTempCode,
+        ]);
+        // Get the User ID from the cache using the temp code as key.
+        $userId = Cache::store('telegram')->pull($userTempCode);
+        $user = User::find($userId);
 
-            try {
-                $userId = base64_decode($startParam);
-                $chatId = $data['message']['chat']['id'];
+        // Get Telegram ID from the request.
+        $chatId = $request->message['chat']['id'];
 
-                if ($this->telegramService->linkUser($userId, $chatId)) {
-                    return response()->json(['ok' => true]);
-                } else {
-                    $this->telegramService->sendMessage($chatId, "❌ Terjadi kesalahan saat menghubungkan akun. Silakan coba lagi.");
-                }
-            } catch (\Exception $e) {
-                $this->telegramService->sendMessage($data['message']['chat']['id'], "❌ Terjadi kesalahan saat menghubungkan akun. Silakan coba lagi.");
-            }
-        }
+        log::info('Telegram Webhook', [
+            'user_id' => $userId,
+            'chat_id' => $chatId,
+        ]);
 
-        return response()->json(['ok' => true]);
+        // Update user with the Telegram Chat ID
+        $user->telegram_chat_id = $chatId;
+        $user->save();
+
+        return response('Success', 200);
     }
 
     /**

@@ -38,7 +38,7 @@ class SetupTelegramWebhook extends Command
             return $this->removeWebhook();
         }
 
-        $url = $this->option('url') ?: config('services.telegram.webhook_url');
+        $url = $this->option('url') ?: config('services.telegram-bot-api.webhook_url');
 
         if (!$url) {
             $this->error('Please provide webhook URL using --url option or set TELEGRAM_WEBHOOK_URL in .env');
