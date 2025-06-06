@@ -34,6 +34,7 @@ class User extends Authenticatable implements FilamentUser, HasAvatar, MustVerif
         'kk_number',
         'role',
         'is_active',
+        'telegram_chat_id',
     ];
 
     /**

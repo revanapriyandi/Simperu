@@ -3,13 +3,16 @@
 namespace App\Filament\Resident\Pages\Auth;
 
 use Filament\Forms\Form;
+use Filament\Facades\Filament;
+use Filament\Events\Auth\Registered;
+use Illuminate\Database\Eloquent\Model;
 use Filament\Forms\Components\TextInput;
 use Filament\Pages\Auth\Register as BaseRegister;
-use Illuminate\Database\Eloquent\Model;
+use Filament\Http\Responses\Auth\Contracts\RegistrationResponse;
+use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 
 class Register extends BaseRegister
 {
-    protected static string $view = 'filament.resident.pages.auth.register';
     public function form(Form $form): Form
     {
         return $form
@@ -67,6 +70,45 @@ class Register extends BaseRegister
                     ->label('Konfirmasi Kata Sandi')
                     ->placeholder('Ulangi kata sandi'),
             ]);
+    }
+
+    public function register(): ?RegistrationResponse
+    {
+        try {
+            $this->rateLimit(2);
+        } catch (TooManyRequestsException $exception) {
+            $this->getRateLimitedNotification($exception)?->send();
+
+            return null;
+        }
+
+        $user = $this->wrapInDatabaseTransaction(function () {
+            $this->callHook('beforeValidate');
+
+            $data = $this->form->getState();
+
+            $this->callHook('afterValidate');
+
+            $data = $this->mutateFormDataBeforeRegister($data);
+
+            $this->callHook('beforeRegister');
+
+            $user = $this->handleRegistration($data);
+
+            $this->form->model($user)->saveRelationships();
+
+            $this->callHook('afterRegister');
+
+            return $user;
+        });
+
+        event(new Registered($user));
+
+        Filament::auth()->login($user);
+
+        session()->regenerate();
+
+        return app(RegistrationResponse::class);
     }
 
     protected function handleRegistration(array $data): Model

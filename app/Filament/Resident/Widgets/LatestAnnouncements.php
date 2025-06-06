@@ -3,6 +3,7 @@
 namespace App\Filament\Resident\Widgets;
 
 use App\Models\Announcement;
+use App\Services\PerformanceMonitorService;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -13,16 +14,21 @@ class LatestAnnouncements extends BaseWidget
 
     protected int | string | array $columnSpan = 'full';
 
+    protected static ?string $pollingInterval = '60s'; // Reduce polling frequency
+
     public function table(Table $table): Table
     {
         return $table
             ->query(
                 Announcement::query()
+                    ->select(['id', 'title', 'type', 'publish_date', 'excerpt']) // Only select needed columns
                     ->where('is_active', true)
                     ->where('publish_date', '<=', now())
                     ->latest('publish_date')
-                    ->limit(5)
+                    ->limit(10) // Increase limit slightly but keep it reasonable
             )
+            ->paginated(false) // Disable pagination for widget
+            ->poll('60s') // Reduce polling frequency
             ->columns([
                 Tables\Columns\TextColumn::make('title')
                     ->label('Judul')

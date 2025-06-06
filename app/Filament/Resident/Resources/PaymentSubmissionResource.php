@@ -123,13 +123,14 @@ class PaymentSubmissionResource extends Resource
     {
         return $table
             ->modifyQueryUsing(
-                fn(Builder $query) =>
-                $query->whereHas(
-                    'family.user',
-                    fn(Builder $q) =>
-                    $q->where('id', Auth::id())
-                )
+                fn(Builder $query) => $query->with(['feeType', 'family'])
+                    ->whereHas(
+                        'family.user',
+                        fn(Builder $q) => $q->where('id', Auth::id())
+                    )
             )
+            ->defaultPaginationPageOption(25) // Add pagination limit
+            ->poll('30s') // Reduce polling frequency
             ->columns([
                 Tables\Columns\TextColumn::make('feeType.name')
                     ->label('Jenis Iuran')

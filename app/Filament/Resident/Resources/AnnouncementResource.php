@@ -59,7 +59,14 @@ class AnnouncementResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query) => $query->where('is_active', true))
+            ->modifyQueryUsing(
+                fn(Builder $query) =>
+                $query->select(['id', 'title', 'type', 'publish_date', 'created_at', 'excerpt'])
+                    ->where('is_active', true)
+                    ->where('publish_date', '<=', now())
+            )
+            ->defaultPaginationPageOption(25) // Add pagination
+            ->poll('60s') // Reduce polling frequency
             ->columns([
                 Tables\Columns\TextColumn::make('title')
                     ->label('Judul')

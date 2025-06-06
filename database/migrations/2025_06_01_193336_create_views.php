@@ -25,7 +25,7 @@ return new class extends Migration
                 COUNT(*) as transaction_count
             FROM financial_transactions
             WHERE status = 'verified'
-            GROUP BY DATE_FORMAT(transaction_date, '%Y-%m')
+            GROUP BY DATE_FORMAT(transaction_date, '%Y-%m'), YEAR(transaction_date), MONTH(transaction_date)
             ORDER BY period DESC
         ");
 

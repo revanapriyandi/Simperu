@@ -36,10 +36,6 @@ class AppServiceProvider extends ServiceProvider
             fn(): View => view('components.auth.login.footer'),
         );
 
-        Blade::directive('svg', function ($expression) {
-            return "<?php echo view('components.svg', ['icon' => {$expression}])->render(); ?>";
-        });
-
         FilamentIcon::register([
             'panels::sidebar.collapse-button' => 'heroicon-o-bars-3-bottom-right',
             'panels::sidebar.expand-button' => 'heroicon-o-bars-3',

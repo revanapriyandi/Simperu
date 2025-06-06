@@ -57,6 +57,7 @@ class ResidentPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                \App\Http\Middleware\CheckTelegramLinked::class,
             ])
             ->authMiddleware([
                 Authenticate::class,

@@ -94,7 +94,14 @@ class ComplaintLetterResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn(Builder $query) => $query->where('submitted_by', Auth::id()))
+            ->modifyQueryUsing(
+                fn(Builder $query) =>
+                $query->select(['id', 'subject', 'category_id', 'priority', 'status', 'submitted_at', 'updated_at'])
+                    ->with(['category:id,name'])
+                    ->where('submitted_by', Auth::id())
+            )
+            ->defaultPaginationPageOption(25) // Add pagination
+            ->poll('60s') // Reduce polling frequency
             ->columns([
                 Tables\Columns\TextColumn::make('subject')
                     ->label('Subjek')
