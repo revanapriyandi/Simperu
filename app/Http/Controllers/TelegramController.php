@@ -43,23 +43,9 @@ class TelegramController extends Controller
 
         $userTempCode = Str::random(35);
         Cache::store('telegram')
-            ->put($userTempCode, Filament::getCurrentPanel()->auth()->user()->id, $seconds = 120);
+            ->put($userTempCode, $user->id, $seconds = 120);
 
         $telegramUrl = $telegramBotUrl . '?start=' . $userTempCode;
-
-        Notification::make()
-            ->title(__('Notifikasi Telegram'))
-            ->body(__('Silakan buka Telegram dan klik tautan di atas untuk mengaktifkan notifikasi.'))
-            ->actions([
-                NotificationAction::make('open')
-                    ->label(__('Buka Telegram'))
-                    ->url($telegramUrl)
-                    ->openUrlInNewTab()
-                    ->icon('tabler-brand-telegram')
-                    ->color('success'),
-            ])
-            ->success()
-            ->send();
 
         return view('telegram.link', compact('telegramUrl', 'user'));
     }
@@ -96,10 +82,7 @@ class TelegramController extends Controller
             'user_temp_code' => $userTempCode,
         ]);
         // Get the User ID from the cache using the temp code as key.
-        $userId = Cache::store('telegram')->get($userTempCode);
-        Log::info('Telegram Webhook', [
-            'user_id' => $userId,
-        ]);
+        $userId = Cache::store('telegram')->pull($userTempCode);
         $user = User::find($userId);
 
         // Get Telegram ID from the request.
