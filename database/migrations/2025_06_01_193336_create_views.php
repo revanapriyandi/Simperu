@@ -12,6 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Drop existing views first
+        DB::statement('DROP VIEW IF EXISTS monthly_financial_summary');
+        DB::statement('DROP VIEW IF EXISTS family_payment_status');
+
         // Monthly Financial Summary View
         DB::statement("
             CREATE VIEW monthly_financial_summary AS

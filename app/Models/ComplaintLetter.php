@@ -15,13 +15,24 @@ class ComplaintLetter extends Model
         'letter_date',
         'recipient',
         'description',
+        'content',
+        'priority',
+        'attachments',
+        'submitted_by',
+        'submitted_at',
         'status',
         'admin_notes',
+        'admin_response',
+        'processed_by',
+        'processed_at',
         'pdf_path',
     ];
 
     protected $casts = [
         'letter_date' => 'date',
+        'submitted_at' => 'datetime',
+        'processed_at' => 'datetime',
+        'attachments' => 'array',
     ];
 
     public function user(): BelongsTo
