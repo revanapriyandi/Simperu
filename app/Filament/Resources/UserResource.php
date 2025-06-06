@@ -45,6 +45,16 @@ class UserResource extends Resource
                             ->required()
                             ->unique(ignoreRecord: true)
                             ->maxLength(255),
+                        Forms\Components\TextInput::make('nik')
+                            ->label('NIK')
+                            ->maxLength(16)
+                            ->placeholder('16 digit NIK')
+                            ->unique(ignoreRecord: true)
+                            ->regex('/^[0-9]{16}$/')
+                            ->validationMessages([
+                                'regex' => 'NIK harus 16 digit angka.',
+                                'unique' => 'NIK sudah terdaftar.',
+                            ]),
                         Forms\Components\TextInput::make('password')
                             ->label('Password')
                             ->password()
@@ -124,6 +134,13 @@ class UserResource extends Resource
                     ->copyable()
                     ->copyMessage('Email disalin!')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('nik')
+                    ->label('NIK')
+                    ->searchable()
+                    ->sortable()
+                    ->copyable()
+                    ->placeholder('Tidak ada')
+                    ->toggleable(),
                 Tables\Columns\BadgeColumn::make('role')
                     ->label('Peran')
                     ->colors([

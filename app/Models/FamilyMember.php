@@ -10,10 +10,12 @@ class FamilyMember extends Model
     protected $fillable = [
         'family_id',
         'name',
+        'nik',
         'relationship',
         'birth_date',
         'gender',
         'occupation',
+        'user_id',
     ];
 
     protected $casts = [
