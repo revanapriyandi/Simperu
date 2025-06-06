@@ -14,8 +14,12 @@ Route::prefix('telegram')->group(function () {
         ->name('telegram.link')
         ->middleware('auth');
 
-    Route::post('/webhook', [TelegramController::class, 'webhook'])
-        ->name('telegram.webhook');
+    Route::post(
+        'telegram/' . config('services.telegram-bot-api.webhook') . '/webhook',
+        [TelegramController::class, 'webhook']
+    )
+        ->name('telegram.webhook')
+        ->middleware('auth');
 
     Route::get('/status', [TelegramController::class, 'checkStatus'])
         ->name('telegram.status')

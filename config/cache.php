@@ -91,9 +91,10 @@ return [
         ],
 
         'telegram' => [
-            'driver' => 'file',
-            'path' => storage_path('framework/cache/telegram'),
-            'lock_path' => storage_path('framework/cache/telegram'),
+            'driver' => 'database',
+            'table' => 'telegram_cache',
+            'connection' => null,
+            'lock_connection' => null,
         ],
 
     ],
