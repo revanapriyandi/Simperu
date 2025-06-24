@@ -37,6 +37,8 @@ class ResidentPanelProvider extends PanelProvider
             ->sidebarWidth('16rem')
             ->brandLogoHeight('5rem')
             ->defaultThemeMode(ThemeMode::Light)
+            ->brandLogo(fn() => asset('assets/logo.png'))
+            ->favicon(fn() => asset('assets/logo.png'))
             ->pages([
                 \App\Filament\Resident\Pages\Dashboard::class,
             ])

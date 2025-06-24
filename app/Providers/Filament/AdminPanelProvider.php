@@ -33,6 +33,8 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Hex::fromString('#1E3A8A'),
             ])
+            ->brandLogo(fn() => asset('assets/logo.png'))
+            ->favicon(fn() => asset('assets/logo.png'))
             ->sidebarWidth('16rem')
             ->brandLogoHeight('5rem')
             ->defaultThemeMode(ThemeMode::Light)
