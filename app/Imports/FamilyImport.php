@@ -23,19 +23,23 @@ class FamilySheetImport implements ToModel, WithHeadingRow
 {
     public function model(array $row)
     {
-        return new Family([
-            'kk_number' => $row['kk_number'],
-            'head_of_family' => $row['head_of_family'],
-            'wife_name' => $row['wife_name'] ?? null,
-            'house_block' => $row['house_block'],
-            'phone_1' => $row['phone_1'] ?? null,
-            'phone_2' => $row['phone_2'] ?? null,
-            'house_status' => $row['house_status'] ?? 'owner',
-            'status' => $row['status'] ?? 'active',
-            'family_members_count' => $row['family_members_count'] ?? 1,
-            'license_plate_1' => $row['license_plate_1'] ?? null,
-            'license_plate_2' => $row['license_plate_2'] ?? null,
-        ]);
+        return Family::updateOrCreate(
+            [
+                'kk_number' => $row['kk_number'],
+            ],
+            [
+                'head_of_family' => $row['head_of_family'],
+                'wife_name' => $row['wife_name'] ?? null,
+                'house_block' => $row['house_block'],
+                'phone_1' => $row['phone_1'] ?? null,
+                'phone_2' => $row['phone_2'] ?? null,
+                'house_status' => $row['house_status'] ?? 'owner',
+                'status' => $row['status'] ?? 'active',
+                'family_members_count' => $row['family_members_count'] ?? 1,
+                'license_plate_1' => $row['license_plate_1'] ?? null,
+                'license_plate_2' => $row['license_plate_2'] ?? null,
+            ]
+        );
     }
 }
 
