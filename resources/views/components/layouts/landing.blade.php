@@ -14,6 +14,8 @@
         href="https://fonts.bunny.net/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap"
         rel="stylesheet" />
 
+    <link rel="icon" href="{{ asset('assets/logo.png') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ asset('assets/logo.png') }}" />
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
 

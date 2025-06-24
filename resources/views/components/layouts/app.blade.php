@@ -17,6 +17,8 @@
             display: none !important;
         }
     </style>
+    <link rel="icon" href="{{ asset('assets/logo.png') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ asset('assets/logo.png') }}" />
 
     @filamentStyles
     @vite('resources/css/app.css')
