@@ -3,21 +3,20 @@
 namespace App\Filament\Resident\Pages;
 
 use App\Models\ComplaintLetter;
-use App\Filament\Resident\Widgets\ComplaintLetterStatsWidget;
-use App\Filament\Resident\Widgets\RecentComplaintLettersWidget;
-use App\Filament\Resident\Widgets\AnnouncementsWidget;
-use App\Filament\Resident\Widgets\QuickActionsWidget;
-use App\Filament\Resident\Widgets\ResidentComplaintStatsWidget;
-use App\Filament\Resident\Widgets\ResidentLatestComplaintsWidget;
-use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Contracts\Support\Htmlable;
+use Filament\Pages\Dashboard as BaseDashboard;
+use App\Filament\Resident\Widgets\QuickActionsWidget;
+use App\Filament\Resident\Widgets\AnnouncementsWidget;
+use App\Filament\Resident\Widgets\ComplaintLetterStatsWidget;
+use App\Filament\Resident\Widgets\RecentComplaintLettersWidget;
+use App\Filament\Resident\Widgets\ResidentComplaintStatsWidget;
+use App\Filament\Resident\Widgets\ResidentLatestComplaintsWidget;
 
 class Dashboard extends BaseDashboard
 {
     protected static ?string $navigationIcon = 'heroicon-o-home';
-
-    protected static ?string $navigationGroup = 'Dashboard';
 
     protected static ?int $navigationSort = 1;
 
@@ -31,6 +30,11 @@ class Dashboard extends BaseDashboard
             ResidentLatestComplaintsWidget::class,
             AnnouncementsWidget::class,
         ];
+    }
+
+    public function getTitle(): string | Htmlable
+    {
+        return '';
     }
 
     public function getColumns(): int | string | array

@@ -3,145 +3,212 @@
 namespace App\Services;
 
 use App\Models\ComplaintLetter;
-use Illuminate\Support\Facades\Storage;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Picqer\Barcode\BarcodeGeneratorHTML;
+use Picqer\Barcode\BarcodeGeneratorPNG;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class DigitalSignatureService
 {
-    /**
-     * Generate digital signature for complaint letter
-     */
-    public function generateSignature(ComplaintLetter $letter, $adminId): array
+    protected BarcodeGeneratorPNG $barcodeGenerator;
+    protected BarcodeGeneratorHTML $barcodeHtmlGenerator;
+
+    public function __construct()
     {
-        $timestamp = Carbon::now();
-        $signatureData = [
+        $this->barcodeGenerator = new BarcodeGeneratorPNG();
+        $this->barcodeHtmlGenerator = new BarcodeGeneratorHTML();
+    }
+
+    /**
+     * Generate digital signature hash untuk surat
+     */
+    public function generateSignatureHash(ComplaintLetter $letter, User $signer): string
+    {
+        $data = [
             'letter_id' => $letter->id,
             'letter_number' => $letter->letter_number,
-            'signed_by' => $adminId,
-            'signed_at' => $timestamp->toISOString(),
-            'hash' => $this->generateHash($letter, $adminId, $timestamp)
+            'signer_id' => $signer->id,
+            'signer_name' => $signer->name,
+            'timestamp' => now()->timestamp,
+            'content_hash' => hash('sha256', $letter->content ?? ''),
         ];
 
-        // Generate barcode/QR code
-        $barcodeData = $this->generateBarcode($signatureData);
-        
-        return [
-            'signature' => json_encode($signatureData),
-            'hash' => $signatureData['hash'],
-            'barcode_path' => $barcodeData['path'],
-            'signed_at' => $timestamp
-        ];
+        return hash('sha256', json_encode($data));
     }
 
     /**
-     * Generate hash for signature verification
+     * Generate barcode untuk digital signature
      */
-    private function generateHash(ComplaintLetter $letter, $adminId, $timestamp): string
+    public function generateBarcode(string $signatureHash, string $format = 'png'): string
     {
-        $data = $letter->id . $letter->letter_number . $adminId . $timestamp->timestamp;
-        return hash('sha256', $data . config('app.key'));
+        $barcodeData = [
+            'hash' => $signatureHash,
+            'timestamp' => now()->timestamp,
+            'system' => 'SIMPERU-VWP',
+        ];
+
+        $barcodeContent = json_encode($barcodeData);
+
+        if ($format === 'html') {
+            return $this->barcodeHtmlGenerator->getBarcode($barcodeContent, $this->barcodeHtmlGenerator::TYPE_CODE_128);
+        }
+
+        return base64_encode($this->barcodeGenerator->getBarcode($barcodeContent, $this->barcodeGenerator::TYPE_CODE_128));
     }
 
     /**
-     * Generate barcode/QR code for signature
+     * Save barcode image ke storage
      */
-    private function generateBarcode(array $signatureData): array
+    public function saveBarcodeImage(string $signatureHash): string
     {
-        $filename = 'signatures/barcode_' . $signatureData['letter_id'] . '_' . time() . '.png';
-        
-        // Create verification URL or data
-        $verificationData = [
-            'letter_id' => $signatureData['letter_id'],
-            'hash' => $signatureData['hash'],
-            'verify_url' => url('/verify-signature/' . $signatureData['hash'])
+        $barcodeData = [
+            'hash' => $signatureHash,
+            'timestamp' => now()->timestamp,
+            'system' => 'SIMPERU-VWP',
         ];
 
-        // Generate QR Code
-        $qrCode = QrCode::format('png')
-            ->size(200)
-            ->margin(10)
-            ->generate(json_encode($verificationData));
-
-        // Store QR code
-        Storage::disk('public')->put($filename, $qrCode);
-
-        return [
-            'path' => $filename,
-            'full_path' => Storage::disk('public')->path($filename)
-        ];
-    }
-
-    /**
-     * Generate PDF with letterhead and signature
-     */
-    public function generateSignedPDF(ComplaintLetter $letter): string
-    {
-        $templateData = $this->prepareTemplateData($letter);
+        $barcodeContent = json_encode($barcodeData);
+        $barcodeImage = $this->barcodeGenerator->getBarcode($barcodeContent, $this->barcodeGenerator::TYPE_CODE_128);
         
-        $pdf = Pdf::loadView('pdf.signed-letter', $templateData)
-            ->setPaper('a4', 'portrait');
-
-        $filename = 'letters/signed_' . $letter->letter_number . '_' . time() . '.pdf';
-        $pdfContent = $pdf->output();
-        
-        Storage::disk('public')->put($filename, $pdfContent);
+        $filename = 'barcodes/' . Str::uuid() . '.png';
+        Storage::disk('public')->put($filename, $barcodeImage);
         
         return $filename;
     }
 
     /**
-     * Prepare template data for PDF generation
+     * Sign surat dengan digital signature
      */
-    private function prepareTemplateData(ComplaintLetter $letter): array
+    public function signLetter(ComplaintLetter $letter, User $signer, array $options = []): bool
     {
-        return [
-            'letter' => $letter->load(['category', 'user', 'signedBy']),
-            'letterhead' => [
-                'title' => 'Perumahan Villa Windaro Permai',
-                'address' => 'Jl. Amarta, RT 03/RW 01 Kelurahan Delima, Kecamatan Binawidya, Kota Pekanbaru, Riau 28292',
-                'logo_path' => public_path('images/logo.png')
-            ],
-            'signature_info' => [
-                'barcode_path' => $letter->barcode_path ? Storage::disk('public')->path($letter->barcode_path) : null,
-                'signed_date' => $letter->signed_at?->format('d F Y'),
-                'signed_by' => $letter->signedBy?->name,
-                'verification_code' => $letter->signature_hash
-            ]
-        ];
+        $signatureHash = $this->generateSignatureHash($letter, $signer);
+        $barcodePath = $this->saveBarcodeImage($signatureHash);
+
+        $letter->update([
+            'digital_signature' => $signatureHash,
+            'signature_hash' => $signatureHash,
+            'barcode_path' => $barcodePath,
+            'signed_at' => now(),
+            'signed_by' => $signer->id,
+            'approval_status' => $options['approval_status'] ?? 'approved',
+            'approval_notes' => $options['approval_notes'] ?? null,
+            'status' => $options['status'] ?? 'approved',
+        ]);
+
+        return true;
     }
 
     /**
      * Verify digital signature
      */
-    public function verifySignature(string $hash): ?ComplaintLetter
+    public function verifySignature(ComplaintLetter $letter): bool
     {
-        return ComplaintLetter::where('signature_hash', $hash)->first();
+        if (empty($letter->digital_signature) || empty($letter->signed_by)) {
+            return false;
+        }
+
+        $signer = User::find($letter->signed_by);
+        if (!$signer) {
+            return false;
+        }
+
+        $expectedHash = $this->generateSignatureHash($letter, $signer);
+        return hash_equals($expectedHash, $letter->digital_signature);
     }
 
     /**
-     * Get letter category template
+     * Generate PDF surat dengan digital signature
      */
-    public function getLetterTemplate(ComplaintLetter $letter): array
+    public function generateSignedPDF(ComplaintLetter $letter): string
     {
-        $baseTemplate = [
-            'recipient' => $letter->recipient,
-            'subject' => $letter->subject,
-            'content' => $letter->content,
-            'date' => $letter->letter_date->format('d F Y'),
-            'location' => 'Pekanbaru'
+        $templateData = $this->prepareTemplateData($letter);
+        $html = $this->renderLetterTemplate($letter, $templateData);
+
+        $options = new Options();
+        $options->set('defaultFont', 'DejaVu Sans');
+        $options->set('isRemoteEnabled', true);
+        $options->set('isHtml5ParserEnabled', true);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $filename = 'letters/' . $letter->letter_number . '_signed.pdf';
+        Storage::disk('public')->put($filename, $dompdf->output());
+
+        $letter->update(['pdf_path' => $filename]);
+
+        return $filename;
+    }
+
+    /**
+     * Prepare data untuk template surat
+     */
+    protected function prepareTemplateData(ComplaintLetter $letter): array
+    {
+        $organization = [
+            'name' => 'Perumahan Villa Windaro Permai',
+            'address' => 'Jl. Amarta, RT 03/RW 01 Kelurahan Delima, Kecamatan Binawidya, Kota Pekanbaru, Riau 28292',
+            'logo_path' => public_path('images/logo.png'),
         ];
 
-        // Add category-specific template data
-        return match ($letter->category->code) {
-            'LNG' => array_merge($baseTemplate, ['type' => 'Surat Lingkungan']),
-            'FST' => array_merge($baseTemplate, ['type' => 'Surat Fasilitas']),
-            'KLH' => array_merge($baseTemplate, ['type' => 'Surat Keterangan Kelahiran']),
-            'KMT' => array_merge($baseTemplate, ['type' => 'Surat Keterangan Kematian']),
-            'IZA' => array_merge($baseTemplate, ['type' => 'Surat Izin Acara']),
-            'PMT' => array_merge($baseTemplate, ['type' => 'Surat Peminjaman Tempat']),
-            default => $baseTemplate
-        };
+        $signatureInfo = [];
+        if ($letter->signed_by) {
+            $signer = User::find($letter->signed_by);
+            $signatureInfo = [
+                'signer_name' => $signer->name ?? 'Admin',
+                'signer_title' => 'Pengurus Perumahan Villa Windaro Permai',
+                'signed_at' => $letter->signed_at?->locale('id')->isoFormat('D MMMM Y'),
+                'signature_hash' => $letter->signature_hash,
+                'barcode_path' => $letter->barcode_path ? Storage::disk('public')->path($letter->barcode_path) : null,
+            ];
+        }
+
+        return [
+            'organization' => $organization,
+            'letter' => [
+                'number' => $letter->letter_number,
+                'date' => $letter->letter_date?->locale('id')->isoFormat('D MMMM Y'),
+                'subject' => $letter->subject,
+                'recipient' => $letter->recipient,
+                'content' => $letter->content,
+                'category' => $letter->category?->name,
+            ],
+            'signature' => $signatureInfo,
+            'user' => [
+                'name' => $letter->user?->name,
+                'family' => $letter->user?->family,
+            ],
+        ];
+    }
+
+    /**
+     * Render template surat berdasarkan kategori
+     */
+    protected function renderLetterTemplate(ComplaintLetter $letter, array $data): string
+    {
+        // Semua surat menggunakan template yang sama: complaint-letter.blade.php
+        return view("letters.templates.complaint-letter", $data)->render();
+    }
+
+    /**
+     * Get barcode as base64 untuk preview
+     */
+    public function getBarcodePreview(string $signatureHash): string
+    {
+        return $this->generateBarcode($signatureHash, 'png');
+    }
+
+    /**
+     * Get barcode as HTML untuk web display
+     */
+    public function getBarcodeHtml(string $signatureHash): string
+    {
+        return $this->generateBarcode($signatureHash, 'html');
     }
 }

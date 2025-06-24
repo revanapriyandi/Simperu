@@ -3,9 +3,14 @@
 namespace App\Filament\Resident\Pages\Auth;
 
 use Filament\Forms\Form;
-use Filament\Forms\Components\TextInput;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\Component;
+use Filament\Forms\Components\TextInput;
+use Filament\Models\Contracts\FilamentUser;
 use Filament\Pages\Auth\Login as BaseLogin;
+use Illuminate\Validation\ValidationException;
+use Filament\Http\Responses\Auth\Contracts\LoginResponse;
+use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 
 class Login extends BaseLogin
 {
@@ -21,6 +26,44 @@ class Login extends BaseLogin
                 $this->getRememberFormComponent(),
             ])
             ->statePath('data');
+    }
+
+    public function authenticate(): ?LoginResponse
+    {
+        try {
+            $this->rateLimit(5);
+        } catch (TooManyRequestsException $exception) {
+            $this->getRateLimitedNotification($exception)?->send();
+
+            return null;
+        }
+
+        $data = $this->form->getState();
+
+        if (! Filament::auth()->attempt($this->getCredentialsFromFormData($data), $data['remember'] ?? false)) {
+            $this->throwFailureValidationException();
+        }
+
+        $user = Filament::auth()->user();
+
+        if ($user->is_active === false) {
+            throw ValidationException::withMessages([
+                'data.email' => 'Your account is not active. Please contact support.',
+            ]);
+        }
+
+        if (
+            ($user instanceof FilamentUser) &&
+            (! $user->canAccessPanel(Filament::getCurrentPanel()))
+        ) {
+            Filament::auth()->logout();
+
+            $this->throwFailureValidationException();
+        }
+
+        session()->regenerate();
+
+        return app(LoginResponse::class);
     }
 
     protected function getEmailFormComponent(): Component
@@ -39,8 +82,7 @@ class Login extends BaseLogin
         return [
             'email' => $data['email'],
             'password' => $data['password'],
-            'role' => 'resident', // Ensure only residents can login to this panel
-            'is_active' => true,
+            'role' => 'resident',
         ];
     }
 }

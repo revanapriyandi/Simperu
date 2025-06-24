@@ -2,157 +2,226 @@
 
 namespace App\Services;
 
+use App\Models\TelegramNotification;
 use App\Models\User;
+use App\Models\Announcement;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class TelegramService
 {
-    private ?string $botToken;
-    private string $baseUrl;
+    protected string $botToken;
+    protected string $baseUrl;
 
     public function __construct()
     {
-        $this->botToken = config('services.telegram-bot-api.bot_token');
+        $this->botToken = config('services.telegram.bot_token');
         $this->baseUrl = "https://api.telegram.org/bot{$this->botToken}";
     }
 
     /**
-     * Send a message to a Telegram chat
+     * Send message to specific chat ID
      */
-    public function sendMessage(string $chatId, string $message, array $options = []): array
+    public function sendMessage(string $chatId, string $message, array $options = []): bool
     {
-        $data = array_merge([
-            'chat_id' => $chatId,
-            'text' => $message,
-            'parse_mode' => 'HTML'
-        ], $options);
-
         try {
-            $response = Http::post("{$this->baseUrl}/sendMessage", $data);
-            return $response->json() ?? [];
-        } catch (\Exception $e) {
-            Log::error('Telegram sendMessage failed', [
+            $response = Http::post("{$this->baseUrl}/sendMessage", [
                 'chat_id' => $chatId,
-                'error' => $e->getMessage()
+                'text' => $message,
+                'parse_mode' => $options['parse_mode'] ?? 'HTML',
+                'disable_web_page_preview' => $options['disable_preview'] ?? true,
             ]);
-            return ['ok' => false, 'error' => $e->getMessage()];
-        }
-    }
 
-    /**
-     * Link a user with their Telegram chat ID
-     */
-    public function linkUser(int $userId, string $chatId): bool
-    {
-        try {
-            $user = User::find($userId);
-
-            if (!$user || $user->role !== 'resident') {
+            if ($response->successful()) {
+                Log::info("Telegram message sent to {$chatId}");
+                return true;
+            } else {
+                Log::error("Failed to send Telegram message to {$chatId}: " . $response->body());
                 return false;
             }
-
-            $user->update(['telegram_chat_id' => $chatId]);
-
-            // Send welcome message
-            $this->sendMessage(
-                $chatId,
-                "✅ <b>Akun Telegram Berhasil Terhubung!</b>\n\n" .
-                    "Halo <b>{$user->name}</b>,\n\n" .
-                    "Akun Telegram Anda telah berhasil dihubungkan dengan sistem SIMPERU. " .
-                    "Sekarang Anda akan menerima notifikasi penting melalui Telegram seperti:\n\n" .
-                    "• 📢 Pengumuman penting\n" .
-                    "• 💰 Konfirmasi pembayaran\n" .
-                    "• 📝 Update status surat pengaduan\n" .
-                    "• 🔔 Notifikasi sistem lainnya\n\n" .
-                    "Terima kasih telah menggunakan SIMPERU! 🏠"
-            );
-
-            return true;
         } catch (\Exception $e) {
-            Log::error('Failed to link Telegram user', [
-                'user_id' => $userId,
-                'chat_id' => $chatId,
-                'error' => $e->getMessage()
-            ]);
+            Log::error("Telegram API error for {$chatId}: " . $e->getMessage());
             return false;
         }
     }
 
     /**
-     * Send notification to user via Telegram
+     * Send announcement to all active residents with Telegram
      */
-    public function sendNotificationToUser(User $user, string $message, array $options = []): bool
+    public function sendAnnouncementToAll(Announcement $announcement): void
     {
-        if (empty($user->telegram_chat_id)) {
-            return false;
+        if (!$announcement->send_telegram) {
+            return;
         }
 
-        $result = $this->sendMessage($user->telegram_chat_id, $message, $options);
-        return $result['ok'] ?? false;
-    }
-
-    /**
-     * Send bulk notifications to multiple users
-     */
-    public function sendBulkNotifications(array $userIds, string $message, array $options = []): array
-    {
-        $results = [];
-        $users = User::whereIn('id', $userIds)
+        $users = User::where('role', 'resident')
+            ->where('is_active', true)
             ->whereNotNull('telegram_chat_id')
-            ->where('role', 'resident')
             ->get();
 
         foreach ($users as $user) {
-            $results[$user->id] = $this->sendNotificationToUser($user, $message, $options);
+            $this->sendAnnouncementToUser($announcement, $user);
         }
 
-        return $results;
+        // Mark announcement as sent
+        $announcement->update(['telegram_sent_at' => now()]);
     }
 
     /**
-     * Verify webhook signature (if using secure webhooks)
+     * Send announcement to specific user
      */
-    public function verifyWebhookSignature(string $payload, string $signature): bool
+    public function sendAnnouncementToUser(Announcement $announcement, User $user): void
     {
-        $calculatedSignature = hash_hmac('sha256', $payload, $this->botToken);
-        return hash_equals($calculatedSignature, $signature);
-    }
+        $message = $this->formatAnnouncementMessage($announcement);
+        
+        $notification = TelegramNotification::create([
+            'type' => 'announcement',
+            'reference_id' => $announcement->id,
+            'message' => $message,
+            'status' => 'pending',
+        ]);
 
-    /**
-     * Set webhook URL for the bot
-     */
-    public function setWebhook(string $url, array $options = []): array
-    {
-        $data = array_merge([
-            'url' => $url
-        ], $options);
+        $success = $this->sendMessage($user->telegram_chat_id, $message);
 
-        try {
-            $response = Http::post("{$this->baseUrl}/setWebhook", $data);
-            return $response->json() ?? [];
-        } catch (\Exception $e) {
-            Log::error('Failed to set Telegram webhook', [
-                'url' => $url,
-                'error' => $e->getMessage()
-            ]);
-            return ['ok' => false, 'error' => $e->getMessage()];
+        if ($success) {
+            $notification->markAsSent();
+        } else {
+            $notification->markAsFailed('Failed to send via Telegram API');
         }
     }
 
     /**
-     * Get webhook info
+     * Format announcement message for Telegram
      */
-    public function getWebhookInfo(): array
+    protected function formatAnnouncementMessage(Announcement $announcement): string
+    {
+        $typeEmoji = match ($announcement->type) {
+            'urgent' => '🚨',
+            'info' => 'ℹ️',
+            'event' => '📅',
+            'financial' => '💰',
+            default => '📢',
+        };
+
+        $message = "{$typeEmoji} <b>PENGUMUMAN - VILLA WINDARO PERMAI</b>\n\n";
+        $message .= "<b>{$announcement->title}</b>\n\n";
+        $message .= $this->formatTextForTelegram($announcement->content);
+        
+        if ($announcement->expire_date) {
+            $message .= "\n\n⏰ <i>Berlaku hingga: " . $announcement->expire_date->format('d/m/Y H:i') . "</i>";
+        }
+
+        $message .= "\n\n📱 <i>Pesan otomatis dari Sistem Informasi Villa Windaro Permai</i>";
+
+        return $message;
+    }
+
+    /**
+     * Format text for Telegram HTML parse mode
+     */
+    protected function formatTextForTelegram(string $text): string
+    {
+        // Convert basic formatting
+        $text = str_replace(['<strong>', '</strong>'], ['<b>', '</b>'], $text);
+        $text = str_replace(['<em>', '</em>'], ['<i>', '</i>'], $text);
+        
+        // Remove unsupported HTML tags
+        $text = strip_tags($text, '<b><i><u><s><code><pre><a>');
+        
+        return $text;
+    }
+
+    /**
+     * Send notification for new complaint letter
+     */
+    public function sendComplaintNotification(string $letterNumber, string $status): void
+    {
+        $admins = User::where('role', 'admin')
+            ->where('is_active', true)
+            ->whereNotNull('telegram_chat_id')
+            ->get();
+
+        $message = "🔔 <b>PENGADUAN BARU</b>\n\n";
+        $message .= "Nomor Surat: <code>{$letterNumber}</code>\n";
+        $message .= "Status: <b>{$status}</b>\n\n";
+        $message .= "Silakan cek sistem untuk detail lengkap.";
+
+        foreach ($admins as $admin) {
+            $notification = TelegramNotification::create([
+                'type' => 'complaint',
+                'reference_id' => null,
+                'message' => $message,
+                'status' => 'pending',
+            ]);
+
+            $success = $this->sendMessage($admin->telegram_chat_id, $message);
+
+            if ($success) {
+                $notification->markAsSent();
+            } else {
+                $notification->markAsFailed('Failed to send via Telegram API');
+            }
+        }
+    }
+
+    /**
+     * Send payment submission notification
+     */
+    public function sendPaymentNotification(string $submissionId, string $amount, string $type): void
+    {
+        $admins = User::where('role', 'admin')
+            ->where('is_active', true)
+            ->whereNotNull('telegram_chat_id')
+            ->get();
+
+        $message = "💰 <b>PEMBAYARAN BARU</b>\n\n";
+        $message .= "ID: <code>{$submissionId}</code>\n";
+        $message .= "Jenis: <b>{$type}</b>\n";
+        $message .= "Jumlah: <b>Rp " . number_format($amount, 0, ',', '.') . "</b>\n\n";
+        $message .= "Silakan verifikasi pembayaran di sistem.";
+
+        foreach ($admins as $admin) {
+            $notification = TelegramNotification::create([
+                'type' => 'payment',
+                'reference_id' => $submissionId,
+                'message' => $message,
+                'status' => 'pending',
+            ]);
+
+            $success = $this->sendMessage($admin->telegram_chat_id, $message);
+
+            if ($success) {
+                $notification->markAsSent();
+            } else {
+                $notification->markAsFailed('Failed to send via Telegram API');
+            }
+        }
+    }
+
+    /**
+     * Test telegram connection
+     */
+    public function testConnection(): array
     {
         try {
-            $response = Http::get("{$this->baseUrl}/getWebhookInfo");
-            return $response->json() ?? [];
+            $response = Http::get("{$this->baseUrl}/getMe");
+            
+            if ($response->successful()) {
+                return [
+                    'success' => true,
+                    'data' => $response->json(),
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'error' => 'Bot token invalid or connection failed',
+                ];
+            }
         } catch (\Exception $e) {
-            Log::error('Failed to get Telegram webhook info', [
-                'error' => $e->getMessage()
-            ]);
-            return ['ok' => false, 'error' => $e->getMessage()];
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
         }
     }
 }

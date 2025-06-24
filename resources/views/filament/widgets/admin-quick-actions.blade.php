@@ -1,30 +1,81 @@
 <x-filament-widgets::widget>
     <x-filament::section>
         <x-slot name="heading">
-            Aksi Cepat
+            Dashboard Pengurus - Aksi Cepat
         </x-slot>
 
+        <!-- Financial Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-emerald-800">Pemasukan Bulan Ini</h3>
+                        <p class="text-xl font-bold text-emerald-900">Rp {{ number_format($monthlyIncome, 0, ',', '.') }}</p>
+                    </div>
+                    <div class="p-2 bg-emerald-200 rounded-full">
+                        <x-heroicon-o-arrow-trending-up class="w-5 h-5 text-emerald-600" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-red-800">Pengeluaran Bulan Ini</h3>
+                        <p class="text-xl font-bold text-red-900">Rp {{ number_format($monthlyExpense, 0, ',', '.') }}</p>
+                    </div>
+                    <div class="p-2 bg-red-200 rounded-full">
+                        <x-heroicon-o-arrow-trending-down class="w-5 h-5 text-red-600" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-blue-800">Saldo Bersih</h3>
+                        <p class="text-xl font-bold {{ ($monthlyIncome - $monthlyExpense) >= 0 ? 'text-blue-900' : 'text-red-900' }}">
+                            Rp {{ number_format($monthlyIncome - $monthlyExpense, 0, ',', '.') }}
+                        </p>
+                    </div>
+                    <div class="p-2 bg-blue-200 rounded-full">
+                        <x-heroicon-o-banknotes class="w-5 h-5 text-blue-600" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-orange-800">Tunggakan Iuran</h3>
+                        <p class="text-xl font-bold text-orange-900">Rp {{ number_format($totalOutstanding, 0, ',', '.') }}</p>
+                        <p class="text-xs text-orange-700">{{ $outstandingFamilies }} keluarga</p>
+                    </div>
+                    <div class="p-2 bg-orange-200 rounded-full">
+                        <x-heroicon-o-exclamation-triangle class="w-5 h-5 text-orange-600" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Pengaduan Pending -->
             <div class="bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-4">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-sm font-medium text-orange-800">Pengaduan Pending</h3>
+                        <h3 class="text-sm font-medium text-orange-800">Surat Pengaduan</h3>
                         <p class="text-2xl font-bold text-orange-900">{{ $pendingComplaints }}</p>
+                        <p class="text-xs text-orange-700">Menunggu persetujuan</p>
                     </div>
                     <div class="p-3 bg-orange-200 rounded-full">
-                        <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                            </path>
-                        </svg>
+                        <x-heroicon-o-document-text class="w-6 h-6 text-orange-600" />
                     </div>
-                </div> <a href="/admin/complaint-letters"
+                </div>
+                <a href="/admin/complaint-letters"
                     class="inline-flex items-center mt-2 text-sm text-orange-600 hover:text-orange-800">
-                    Lihat Semua
-                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
+                    Proses Surat
+                    <x-heroicon-o-arrow-right class="w-4 h-4 ml-1" />
                 </a>
             </div>
 
@@ -32,68 +83,105 @@
             <div class="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 rounded-lg p-4">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-sm font-medium text-red-800">Pembayaran Pending</h3>
+                        <h3 class="text-sm font-medium text-red-800">Bukti Pembayaran</h3>
                         <p class="text-2xl font-bold text-red-900">{{ $pendingPayments }}</p>
+                        <p class="text-xs text-red-700">Perlu verifikasi</p>
                     </div>
                     <div class="p-3 bg-red-200 rounded-full">
-                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z">
-                            </path>
-                        </svg>
+                        <x-heroicon-o-credit-card class="w-6 h-6 text-red-600" />
                     </div>
-                </div> <a href="/admin/payment-submissions"
+                </div>
+                <a href="/admin/payment-submissions"
                     class="inline-flex items-center mt-2 text-sm text-red-600 hover:text-red-800">
-                    Lihat Semua
-                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
+                    Verifikasi Pembayaran
+                    <x-heroicon-o-arrow-right class="w-4 h-4 ml-1" />
                 </a>
             </div>
 
-            <!-- User Belum Verifikasi -->
-            <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200 rounded-lg p-4">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-sm font-medium text-yellow-800">Email Belum Verifikasi</h3>
-                        <p class="text-2xl font-bold text-yellow-900">{{ $unverifiedUsers }}</p>
-                    </div>
-                    <div class="p-3 bg-yellow-200 rounded-full">
-                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                        </svg>
-                    </div>
-                </div> <a href="/admin/users"
-                    class="inline-flex items-center mt-2 text-sm text-yellow-600 hover:text-yellow-800">
-                    Lihat Semua
-                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                </a>
-            </div>
-
-            <!-- Total Warga -->
+            <!-- Data Keluarga -->
             <div class="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-4">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h3 class="text-sm font-medium text-green-800">Total Warga</h3>
-                        <p class="text-2xl font-bold text-green-900">{{ $totalResidents }}</p>
+                        <h3 class="text-sm font-medium text-green-800">Data Warga</h3>
+                        <p class="text-2xl font-bold text-green-900">{{ $totalFamilies }}</p>
+                        <p class="text-xs text-green-700">Keluarga terdaftar</p>
                     </div>
                     <div class="p-3 bg-green-200 rounded-full">
-                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
-                            </path>
-                        </svg>
+                        <x-heroicon-o-home-modern class="w-6 h-6 text-green-600" />
                     </div>
-                </div> <a href="/admin/users"
+                </div>
+                <a href="/admin/families"
                     class="inline-flex items-center mt-2 text-sm text-green-600 hover:text-green-800">
-                    Lihat Semua
-                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
+                    Kelola Data Keluarga
+                    <x-heroicon-o-arrow-right class="w-4 h-4 ml-1" />
                 </a>
+            </div>
+
+            <!-- Laporan Keuangan -->
+            <div class="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-medium text-blue-800">Laporan Keuangan</h3>
+                        <p class="text-2xl font-bold text-blue-900">📊</p>
+                        <p class="text-xs text-blue-700">Ringkasan & analisis</p>
+                    </div>
+                    <div class="p-3 bg-blue-200 rounded-full">
+                        <x-heroicon-o-chart-bar class="w-6 h-6 text-blue-600" />
+                    </div>
+                </div>
+                <a href="/admin/financial-summary"
+                    class="inline-flex items-center mt-2 text-sm text-blue-600 hover:text-blue-800">
+                    Lihat Laporan
+                    <x-heroicon-o-arrow-right class="w-4 h-4 ml-1" />
+                </a>
+            </div>
+        </div>
+
+        <!-- Additional Actions -->
+        <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4">
+                <h4 class="font-medium text-purple-900 mb-2">🏠 Manajemen Perumahan</h4>
+                <div class="space-y-2">
+                    <a href="/admin/announcements" class="block text-sm text-purple-700 hover:text-purple-900">
+                        • Kelola Pengumuman
+                    </a>
+                    <a href="/admin/activity-photos" class="block text-sm text-purple-700 hover:text-purple-900">
+                        • Foto Kegiatan
+                    </a>
+                    <a href="/admin/fee-types" class="block text-sm text-purple-700 hover:text-purple-900">
+                        • Jenis Iuran
+                    </a>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 border border-indigo-200 rounded-lg p-4">
+                <h4 class="font-medium text-indigo-900 mb-2">💰 Keuangan & Iuran</h4>
+                <div class="space-y-2">
+                    <a href="/admin/financial-transactions" class="block text-sm text-indigo-700 hover:text-indigo-900">
+                        • Transaksi Keuangan
+                    </a>
+                    <a href="/admin/payment-submissions" class="block text-sm text-indigo-700 hover:text-indigo-900">
+                        • Pembayaran Warga
+                    </a>
+                    <a href="/admin/financial-summary" class="block text-sm text-indigo-700 hover:text-indigo-900">
+                        • Laporan Bulanan
+                    </a>
+                </div>
+            </div>
+
+            <div class="bg-gradient-to-r from-teal-50 to-teal-100 border border-teal-200 rounded-lg p-4">
+                <h4 class="font-medium text-teal-900 mb-2">📋 Administrasi</h4>
+                <div class="space-y-2">
+                    <a href="/admin/users" class="block text-sm text-teal-700 hover:text-teal-900">
+                        • Kelola Pengguna
+                    </a>
+                    <a href="/admin/letter-categories" class="block text-sm text-teal-700 hover:text-teal-900">
+                        • Kategori Surat
+                    </a>
+                    <a href="/admin/landing-page-settings" class="block text-sm text-teal-700 hover:text-teal-900">
+                        • Pengaturan Website
+                    </a>
+                </div>
             </div>
         </div>
     </x-filament::section>

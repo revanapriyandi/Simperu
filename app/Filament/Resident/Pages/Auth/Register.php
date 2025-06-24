@@ -4,363 +4,360 @@ namespace App\Filament\Resident\Pages\Auth;
 
 use App\Models\User;
 use App\Models\Family;
-use App\Models\FamilyMember;
 use Filament\Forms\Form;
-use App\Enums\HouseStatus;
 use Filament\Facades\Filament;
 use Filament\Forms\Components\Grid;
 use Filament\Events\Auth\Registered;
+use Filament\Support\Enums\MaxWidth;
+use Illuminate\Support\Facades\Hash;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Textarea;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Contracts\Auth\Authenticatable;
+use Filament\Forms\Components\Component;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
+use Illuminate\Validation\Rules\Password;
 use Filament\Forms\Components\Placeholder;
-use App\Services\RegistrationValidationService;
 use Filament\Pages\Auth\Register as BaseRegister;
 use Filament\Http\Responses\Auth\Contracts\RegistrationResponse;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 
 class Register extends BaseRegister
 {
-    protected static string $view = 'filament.resident.pages.auth.register';
-    protected ?string $maxWidth = '4xl';
-    protected static ?string $title = 'Daftar Akun Warga';
-    protected static ?string $navigationLabel = 'Daftar';
-
-    public function mount(): void
+    public function getMaxWidth(): MaxWidth | string | null
     {
-        if (Filament::auth()->check()) {
-            redirect()->intended(Filament::getUrl());
-        }
-
-        // Jangan panggil parent::mount() untuk menghindari validasi prematur
-        $this->form->fill([]);
-    }
-
-    public function hasUnsavedDataChangesAlert(): bool
-    {
-        return false;
-    }
-
-    protected function getFormStatePath(): ?string
-    {
-        return 'data';
-    }
-
-    public function getTitle(): string
-    {
-        return 'Daftar Akun Warga Baru';
-    }
-
-    public function getHeading(): string
-    {
-        return 'Bergabung dengan Komunitas Digital';
-    }
-
-    public function getSubheading(): ?string
-    {
-        return 'Lengkapi formulir registrasi untuk mendapatkan akses penuh ke layanan perumahan';
+        return MaxWidth::Full;
     }
 
     public function form(Form $form): Form
     {
-        return $form->schema([
-            Wizard::make([
-                Wizard\Step::make('personal')
-                    ->label('Data Pribadi')
-                    ->description('Informasi identitas Anda')
-                    ->icon('heroicon-o-user')
-                    ->schema([
-                        Grid::make(['default' => 1, 'md' => 2])->schema([
-                            TextInput::make('name')
-                                ->label('Nama Lengkap')
-                                ->maxLength(255)
-                                ->autofocus()
-                                ->placeholder('Masukkan nama lengkap sesuai KTP')
-                                ->prefixIcon('heroicon-o-user')
-                                ->columnSpan(['default' => 1, 'md' => 2]),
+        return $form
+            ->schema([
+                Wizard::make([
+                    Wizard\Step::make('Informasi Akun')
+                        ->icon('heroicon-m-user-circle')
+                        ->description('Buat akun untuk mengakses sistem')
+                        ->schema([
+                            Section::make('Informasi Login')
+                                ->description('Data yang akan digunakan untuk masuk ke sistem Villa Windaro Permai')
+                                ->icon('heroicon-m-key')
+                                ->schema([
+                                    Grid::make(2)
+                                        ->schema([
+                                            TextInput::make('name')
+                                                ->label('Nama Lengkap')
+                                                ->required()
+                                                ->maxLength(255)
+                                                ->placeholder('Masukkan nama lengkap sesuai KTP')
+                                                ->helperText('Nama harus sesuai dengan yang tertera di KTP')
+                                                ->validationAttribute('nama lengkap'),
+                                            TextInput::make('email')
+                                                ->label('Alamat Email')
+                                                ->email()
+                                                ->required()
+                                                ->maxLength(255)
+                                                ->unique(User::class)
+                                                ->placeholder('contoh@email.com')
+                                                ->helperText('Email akan digunakan untuk notifikasi sistem')
+                                                ->validationAttribute('email'),
+                                        ]),
+                                    Grid::make(2)
+                                        ->schema([
+                                            TextInput::make('password')
+                                                ->label('Kata Sandi')
+                                                ->password()
+                                                ->required()
+                                                ->rule(Password::default()->mixedCase()->numbers()->symbols())
+                                                ->same('passwordConfirmation')
+                                                ->placeholder('Minimal 8 karakter')
+                                                ->helperText('Gunakan kombinasi huruf besar, kecil, angka, dan simbol')
+                                                ->validationAttribute('kata sandi'),
+                                            TextInput::make('passwordConfirmation')
+                                                ->label('Konfirmasi Kata Sandi')
+                                                ->password()
+                                                ->required()
+                                                ->dehydrated(false)
+                                                ->placeholder('Ulangi kata sandi')
+                                                ->helperText('Harus sama dengan kata sandi di atas')
+                                                ->validationAttribute('konfirmasi kata sandi'),
+                                        ]),
+                                ]),
+                        ]),
 
-                            TextInput::make('nik')
-                                ->label('Nomor Induk Kependudukan (NIK)')
-                                ->placeholder('16 digit NIK sesuai KTP')
-                                ->prefixIcon('heroicon-o-identification')
-                                ->helperText('Nomor NIK sesuai KTP')
-                                ->live(onBlur: true)
-                                ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                    if ($state && strlen($state) === 16) {
-                                        $validationService = app(RegistrationValidationService::class);
-                                        $nikValidation = $validationService->validateNik($state);
+                    Wizard\Step::make('Data Pribadi')
+                        ->icon('heroicon-m-identification')
+                        ->description('Informasi pribadi dan dokumen')
+                        ->schema([
+                            Section::make('Identitas Pribadi')
+                                ->description('Data sesuai dengan dokumen resmi (KTP/KK)')
+                                ->icon('heroicon-m-document-text')
+                                ->schema([
+                                    Grid::make(3)
+                                        ->schema([
+                                            TextInput::make('nik')
+                                                ->label('NIK (Nomor Induk Kependudukan)')
+                                                ->required()
+                                                ->numeric()
+                                                ->length(16)
+                                                ->unique(User::class)
+                                                ->placeholder('16 digit NIK dari KTP')
+                                                ->helperText('NIK harus sesuai dengan KTP yang berlaku')
+                                                ->validationAttribute('NIK'),
+                                            TextInput::make('phone')
+                                                ->label('Nomor Telepon/WhatsApp')
+                                                ->tel()
+                                                ->required()
+                                                ->maxLength(20)
+                                                ->placeholder('08xxxxxxxxxx')
+                                                ->helperText('Nomor aktif untuk komunikasi darurat')
+                                                ->validationAttribute('nomor telepon'),
+                                            DatePicker::make('birth_date')
+                                                ->label('Tanggal Lahir')
+                                                ->required()
+                                                ->maxDate(now()->subYears(17))
+                                                ->helperText('Minimal berusia 17 tahun')
+                                                ->validationAttribute('tanggal lahir'),
+                                        ]),
+                                    Grid::make(2)
+                                        ->schema([
+                                            Select::make('gender')
+                                                ->label('Jenis Kelamin')
+                                                ->required()
+                                                ->options([
+                                                    'laki-laki' => 'Laki-laki',
+                                                    'perempuan' => 'Perempuan',
+                                                ])
+                                                ->validationAttribute('jenis kelamin'),
+                                            TextInput::make('occupation')
+                                                ->label('Pekerjaan')
+                                                ->required()
+                                                ->maxLength(100)
+                                                ->placeholder('Contoh: Karyawan Swasta, Wiraswasta, PNS')
+                                                ->helperText('Pekerjaan utama saat ini')
+                                                ->validationAttribute('pekerjaan'),
+                                        ]),
+                                ]),
+                        ]),
 
-                                        if ($nikValidation['is_registered']) {
-                                            $this->addError('data.nik', $nikValidation['message']);
-                                        }
-                                    }
-                                }),
+                    Wizard\Step::make('Informasi Hunian')
+                        ->icon('heroicon-m-home-modern')
+                        ->description('Data tempat tinggal di Villa Windaro Permai')
+                        ->schema([
+                            Section::make('Data Hunian')
+                                ->description('Informasi rumah dan kepemilikan di Villa Windaro Permai')
+                                ->icon('heroicon-m-building-office-2')
+                                ->schema([
+                                    Grid::make(3)
+                                        ->schema([
+                                            TextInput::make('house_number')
+                                                ->label('Nomor/Blok Rumah')
+                                                ->required()
+                                                ->maxLength(10)
+                                                ->placeholder('Contoh: A1, B12, C5')
+                                                ->helperText('Sesuai dengan plang rumah di Villa Windaro Permai')
+                                                ->validationAttribute('nomor rumah'),
+                                            TextInput::make('kk_number')
+                                                ->label('Nomor Kartu Keluarga')
+                                                ->required()
+                                                ->numeric()
+                                                ->length(16)
+                                                ->placeholder('16 digit nomor KK')
+                                                ->helperText('Nomor KK akan diverifikasi dengan data yang ada')
+                                                ->validationAttribute('nomor KK'),
+                                            Select::make('house_status')
+                                                ->label('Status Kepemilikan')
+                                                ->required()
+                                                ->options([
+                                                    'owner' => 'Pemilik',
+                                                    'tenant' => 'Penyewa/Kontrak',
+                                                    'family' => 'Keluarga Pemilik',
+                                                ])
+                                                ->default('owner')
+                                                ->helperText('Status hunian di Villa Windaro Permai')
+                                                ->validationAttribute('status kepemilikan'),
+                                        ]),
+                                    Grid::make(2)
+                                        ->schema([
+                                            TextInput::make('emergency_contact')
+                                                ->label('Kontak Darurat')
+                                                ->tel()
+                                                ->maxLength(20)
+                                                ->placeholder('Nomor keluarga/kerabat terdekat')
+                                                ->helperText('Nomor yang dapat dihubungi dalam keadaan darurat'),
+                                            TextInput::make('emergency_contact_relation')
+                                                ->label('Hubungan Kontak Darurat')
+                                                ->maxLength(50)
+                                                ->placeholder('Contoh: Istri, Anak, Orangtua, Saudara')
+                                                ->helperText('Hubungan dengan kontak darurat'),
+                                        ]),
+                                ]),
 
-                            TextInput::make('email')
-                                ->label('Email')
-                                ->email()
-                                ->placeholder('contoh@email.com')
-                                ->prefixIcon('heroicon-o-envelope'),
+                            Section::make('Informasi Kendaraan (Opsional)')
+                                ->description('Data kendaraan yang sering digunakan (untuk keperluan keamanan)')
+                                ->icon('heroicon-m-truck')
+                                ->schema([
+                                    Grid::make(2)
+                                        ->schema([
+                                            TextInput::make('vehicle_1_plate')
+                                                ->label('Plat Nomor Kendaraan 1')
+                                                ->maxLength(15)
+                                                ->placeholder('B 1234 XYZ')
+                                                ->helperText('Kendaraan utama yang sering digunakan'),
+                                            TextInput::make('vehicle_1_type')
+                                                ->label('Jenis Kendaraan 1')
+                                                ->maxLength(50)
+                                                ->placeholder('Honda Civic, Toyota Avanza, dll')
+                                                ->helperText('Merk dan model kendaraan'),
+                                        ]),
+                                    Grid::make(2)
+                                        ->schema([
+                                            TextInput::make('vehicle_2_plate')
+                                                ->label('Plat Nomor Kendaraan 2')
+                                                ->maxLength(15)
+                                                ->placeholder('B 5678 ABC')
+                                                ->helperText('Kendaraan kedua (jika ada)'),
+                                            TextInput::make('vehicle_2_type')
+                                                ->label('Jenis Kendaraan 2')
+                                                ->maxLength(50)
+                                                ->placeholder('Motor, Mobil lain, dll')
+                                                ->helperText('Merk dan model kendaraan kedua'),
+                                        ]),
+                                ]),
+                        ]),
 
-                            TextInput::make('phone')
-                                ->label('Nomor Telepon')
-                                ->placeholder('08xxxxxxxxxx')
-                                ->prefixIcon('heroicon-o-phone')
-                                ->tel(),
-                        ])
-                    ]),
+                    Wizard\Step::make('Notifikasi & Komunikasi')
+                        ->icon('heroicon-m-chat-bubble-left-right')
+                        ->description('Pengaturan komunikasi dan notifikasi')
+                        ->schema([
+                            Section::make('Notifikasi Telegram')
+                                ->description('Pengaturan untuk menerima notifikasi melalui Telegram')
+                                ->icon('heroicon-m-paper-airplane')
+                                ->schema([
+                                    Toggle::make('enable_telegram')
+                                        ->label('Aktifkan Notifikasi Telegram')
+                                        ->helperText('Terima pengumuman dan update penting via Telegram')
+                                        ->default(false)
+                                        ->live(),
+                                    TextInput::make('telegram_chat_id')
+                                        ->label('Telegram Chat ID')
+                                        ->numeric()
+                                        ->placeholder('Chat ID Telegram Anda')
+                                        ->helperText('Dapatkan Chat ID dari @userinfobot di Telegram')
+                                        ->visible(fn(\Filament\Forms\Get $get) => $get('enable_telegram')),
+                                    Placeholder::make('telegram_help')
+                                        ->label('Cara mendapatkan Chat ID:')
+                                        ->content(function () {
+                                            return new \Illuminate\Support\HtmlString('
+                                                <ol style="margin: 0; padding-left: 20px;">
+                                                    <li>Buka Telegram dan cari <strong>@userinfobot</strong></li>
+                                                    <li>Kirim pesan <strong>/start</strong></li>
+                                                    <li>Bot akan mengirim Chat ID Anda</li>
+                                                    <li>Salin angka Chat ID tersebut</li>
+                                                </ol>
+                                            ');
+                                        })
+                                        ->visible(fn(\Filament\Forms\Get $get) => $get('enable_telegram')),
+                                ]),
 
-                Wizard\Step::make('family')
-                    ->label('Data Keluarga')
-                    ->description('Informasi Kartu Keluarga')
-                    ->icon('heroicon-o-home')
-                    ->schema([
-                        Section::make('Informasi Kartu Keluarga')
-                            ->description('Masukkan nomor KK untuk bergabung dengan keluarga yang sudah terdaftar atau buat keluarga baru')
-                            ->schema([
-                                TextInput::make('kk_number')
-                                    ->label('Nomor Kartu Keluarga (KK)')
-                                    ->placeholder('16 digit nomor KK')
-                                    ->prefixIcon('heroicon-o-home')
-                                    ->live(onBlur: true)
-                                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                        if ($state && strlen($state) === 16) {
-                                            $validationService = app(RegistrationValidationService::class);
-                                            $kkValidation = $validationService->validateKkNumber($state);
+                            Section::make('Preferensi Komunikasi')
+                                ->description('Pilih jenis informasi yang ingin Anda terima')
+                                ->icon('heroicon-m-cog-6-tooth')
+                                ->schema([
+                                    Grid::make(2)
+                                        ->schema([
+                                            Toggle::make('notify_announcements')
+                                                ->label('Pengumuman Umum')
+                                                ->helperText('Notifikasi pengumuman dari pengurus')
+                                                ->default(true),
+                                            Toggle::make('notify_financial')
+                                                ->label('Informasi Keuangan')
+                                                ->helperText('Laporan keuangan dan tagihan')
+                                                ->default(true),
+                                        ]),
+                                    Grid::make(2)
+                                        ->schema([
+                                            Toggle::make('notify_events')
+                                                ->label('Acara dan Kegiatan')
+                                                ->helperText('Undangan acara dan kegiatan warga')
+                                                ->default(true),
+                                            Toggle::make('notify_security')
+                                                ->label('Informasi Keamanan')
+                                                ->helperText('Update keamanan dan situasi darurat')
+                                                ->default(true),
+                                        ]),
+                                ]),
+                        ]),
 
-                                            if ($kkValidation['is_registered']) {
-                                                // KK sudah ada - registrasi sebagai anggota keluarga
-                                                $family = Family::where('kk_number', $state)->first();
-                                                if ($family) {
-                                                    $set('family_name', $family->family_name);
-                                                    $set('address', $family->address);
-                                                    $set('registration_type', 'family_member');
-
-                                                    // Validasi apakah bisa daftar sebagai anggota keluarga
-                                                    $memberValidation = $validationService->canRegisterAsFamilyMember($state, $get('nik'));
-                                                    if (!$memberValidation['can_register']) {
-                                                        $this->addError('data.kk_number', $memberValidation['message']);
-                                                    }
-                                                }
-                                            } else {
-                                                // KK belum ada - registrasi sebagai kepala keluarga
-                                                $set('family_name', '');
-                                                $set('address', '');
-                                                $set('registration_type', 'head_of_family');
-
-                                                // Validasi apakah bisa daftar sebagai kepala keluarga
-                                                $headValidation = $validationService->canRegisterAsHeadOfFamily($state, $get('nik'));
-                                                if (!$headValidation['can_register']) {
-                                                    $this->addError('data.kk_number', $headValidation['message']);
-                                                }
-                                            }
-                                        }
-                                    }),
-
-                                Placeholder::make('registration_info')
-                                    ->label('')
-                                    ->content(function (callable $get) {
-                                        $kkNumber = $get('kk_number');
-                                        $registrationType = $get('registration_type');
-
-                                        if (!$kkNumber || strlen($kkNumber) !== 16) {
-                                            return 'Masukkan nomor KK yang valid untuk melihat informasi registrasi.';
-                                        }
-
-                                        if ($registrationType === 'family_member') {
-                                            return '✅ **Bergabung dengan keluarga yang sudah terdaftar**. Data keluarga akan diisi otomatis.';
-                                        } elseif ($registrationType === 'head_of_family') {
-                                            return '📋 **Mendaftar sebagai kepala keluarga baru**. Anda perlu mengisi data keluarga.';
-                                        }
-
-                                        return 'Memvalidasi nomor KK...';
-                                    })
-                                    ->columnSpan(2),
-
-                                TextInput::make('family_name')
-                                    ->label('Nama Kepala Keluarga')
-                                    ->placeholder('Nama kepala keluarga')
-                                    ->prefixIcon('heroicon-o-user-group')
-                                    ->disabled(fn(callable $get) => $get('registration_type') === 'family_member')
-                                    ->dehydrated(),
-
-                                TextInput::make('address')
-                                    ->label('Alamat Lengkap')
-                                    ->placeholder('Alamat sesuai KK')
-                                    ->prefixIcon('heroicon-o-map-pin')
-                                    ->disabled(fn(callable $get) => $get('registration_type') === 'family_member')
-                                    ->dehydrated()
-                                    ->columnSpan(2),
-
-                                Select::make('house_status')
-                                    ->label('Status Rumah')
-                                    ->options(HouseStatus::class)
-                                    ->placeholder('Pilih status kepemilikan rumah')
-                                    ->prefixIcon('heroicon-o-building-office')
-                                    ->disabled(fn(callable $get) => $get('registration_type') === 'family_member')
-                                    ->dehydrated(),
-
-                                // Hidden field untuk menyimpan tipe registrasi
-                                TextInput::make('registration_type')
-                                    ->hidden()
-                                    ->dehydrated(),
-                            ])
-                    ]),
-
-                Wizard\Step::make('credentials')
-                    ->label('Keamanan')
-                    ->description('Buat kata sandi akun')
-                    ->icon('heroicon-o-lock-closed')
-                    ->schema([
-                        Grid::make(['default' => 1, 'md' => 2])->schema([
-                            TextInput::make('password')
-                                ->label('Kata Sandi')
-                                ->password()
-                                ->placeholder('Minimal 8 karakter')
-                                ->prefixIcon('heroicon-o-lock-closed')
-                                ->revealable(),
-
-                            TextInput::make('password_confirmation')
-                                ->label('Konfirmasi Kata Sandi')
-                                ->password()
-                                ->placeholder('Ulangi kata sandi')
-                                ->prefixIcon('heroicon-o-lock-closed')
-                                ->revealable()
-                                ->dehydrated(false),
-
-                            Placeholder::make('password_requirements')
-                                ->label('Persyaratan Kata Sandi')
-                                ->content('
-                                    <div class="text-sm text-gray-600 dark:text-gray-400">
-                                        <ul class="list-disc list-inside space-y-1">
-                                            <li>Minimal 8 karakter</li>
-                                            <li>Kombinasi huruf dan angka disarankan</li>
-                                            <li>Hindari kata sandi yang mudah ditebak</li>
-                                        </ul>
-                                    </div>
-                                ')
-                                ->columnSpan(2),
-                        ])
-                    ]),
-
-                Wizard\Step::make('confirmation')
-                    ->label('Konfirmasi')
-                    ->description('Periksa data sebelum mendaftar')
-                    ->icon('heroicon-o-check-circle')
-                    ->schema([
-                        Section::make('Ringkasan Pendaftaran')
-                            ->description('Pastikan semua data sudah benar sebelum melanjutkan')
-                            ->schema([
-                                Placeholder::make('summary')
-                                    ->label('')
-                                    ->content(function (callable $get) {
-                                        $name = $get('name') ?: '-';
-                                        $nik = $get('nik') ?: '-';
-                                        $email = $get('email') ?: '-';
-                                        $phone = $get('phone') ?: '-';
-                                        $kkNumber = $get('kk_number') ?: '-';
-                                        $familyName = $get('family_name') ?: '-';
-                                        $address = $get('address') ?: '-';
-                                        $registrationType = $get('registration_type');
-
-                                        $typeLabel = $registrationType === 'family_member'
-                                            ? 'Anggota Keluarga'
-                                            : 'Kepala Keluarga Baru';
-
-                                        return "
-                                            <div class='space-y-4'>
-                                                <div class='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                                                    <div>
-                                                        <h4 class='font-semibold text-gray-900 dark:text-gray-100'>Data Pribadi</h4>
-                                                        <div class='mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-400'>
-                                                            <p><span class='font-medium'>Nama:</span> {$name}</p>
-                                                            <p><span class='font-medium'>NIK:</span> {$nik}</p>
-                                                            <p><span class='font-medium'>Email:</span> {$email}</p>
-                                                            <p><span class='font-medium'>Telepon:</span> {$phone}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <h4 class='font-semibold text-gray-900 dark:text-gray-100'>Data Keluarga</h4>
-                                                        <div class='mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-400'>
-                                                            <p><span class='font-medium'>Tipe Registrasi:</span> {$typeLabel}</p>
-                                                            <p><span class='font-medium'>No. KK:</span> {$kkNumber}</p>
-                                                            <p><span class='font-medium'>Kepala Keluarga:</span> {$familyName}</p>
-                                                            <p><span class='font-medium'>Alamat:</span> {$address}</p>
-                                                        </div>
-                                                    </div>
+                    Wizard\Step::make('Verifikasi & Konfirmasi')
+                        ->icon('heroicon-m-shield-check')
+                        ->description('Konfirmasi data dan persetujuan')
+                        ->schema([
+                            Section::make('Verifikasi Data')
+                                ->description('Pastikan semua data yang Anda masukkan sudah benar')
+                                ->icon('heroicon-m-document-check')
+                                ->schema([
+                                    Placeholder::make('verification_info')
+                                        ->label('Informasi Penting:')
+                                        ->content(function () {
+                                            return new \Illuminate\Support\HtmlString('
+                                                <div style="background: #fef5e7; border: 1px solid #f6ad55; border-radius: 8px; padding: 15px; margin: 10px 0;">
+                                                    <ul style="margin: 0; padding-left: 20px; color: #744210;">
+                                                        <li><strong>Data akan diverifikasi</strong> oleh admin dalam 1-2 hari kerja</li>
+                                                        <li><strong>NIK dan nomor KK</strong> akan dicocokkan dengan database resmi</li>
+                                                        <li><strong>Akun akan aktif</strong> setelah verifikasi selesai</li>
+                                                        <li><strong>Notifikasi status</strong> akan dikirim via email</li>
+                                                    </ul>
                                                 </div>
-                                            </div>
-                                        ";
-                                    })
-                                    ->columnSpan(2),
+                                            ');
+                                        }),
 
-                                // Form completion status and register button
-                                \Filament\Forms\Components\View::make('filament.components.registration-form-status')
-                                    ->viewData([
-                                        'isComplete' => fn() => $this->isFormComplete()
-                                    ])
-                            ])
-                    ])
-            ])
-        ])->columns(1);
-    }
+                                    Grid::make(1)
+                                        ->schema([
+                                            Select::make('data_verification')
+                                                ->label('Konfirmasi Kebenaran Data')
+                                                ->required()
+                                                ->options([
+                                                    'verified' => 'Ya, saya konfirmasi semua data yang saya masukkan adalah benar dan sesuai dengan dokumen resmi',
+                                                ])
+                                                ->placeholder('Pilih konfirmasi')
+                                                ->helperText('Pastikan data NIK, KK, dan alamat rumah sudah benar')
+                                                ->validationAttribute('konfirmasi data'),
+                                        ]),
+                                ]),
 
-    public function isFormComplete(): bool
-    {
-        $data = $this->form->getState();
+                            Section::make('Persetujuan')
+                                ->description('Ketentuan penggunaan sistem')
+                                ->icon('heroicon-m-document-text')
+                                ->schema([
+                                    Toggle::make('agree_terms')
+                                        ->label('Saya menyetujui syarat dan ketentuan penggunaan sistem')
+                                        ->required()
+                                        ->helperText('Wajib disetujui untuk melanjutkan pendaftaran')
+                                        ->validationAttribute('persetujuan syarat'),
 
-        $requiredFields = [
-            'name',
-            'nik',
-            'email',
-            'phone',
-            'kk_number',
-            'password'
-        ];
+                                    Toggle::make('agree_privacy')
+                                        ->label('Saya menyetujui kebijakan privasi dan penggunaan data')
+                                        ->required()
+                                        ->helperText('Data pribadi akan dijaga kerahasiaannya sesuai kebijakan')
+                                        ->validationAttribute('persetujuan privasi'),
 
-        // Check basic required fields
-        foreach ($requiredFields as $field) {
-            if (empty($data[$field])) {
-                return false;
-            }
-        }
-
-        // Check conditional fields based on registration type
-        if (($data['registration_type'] ?? '') !== 'family_member') {
-            $headOfFamilyFields = ['family_name', 'address', 'house_status'];
-            foreach ($headOfFamilyFields as $field) {
-                if (empty($data[$field])) {
-                    return false;
-                }
-            }
-        }
-
-        // Validasi format NIK dan KK
-        if (!preg_match('/^[0-9]{16}$/', $data['nik'] ?? '')) {
-            return false;
-        }
-
-        if (!preg_match('/^[0-9]{16}$/', $data['kk_number'] ?? '')) {
-            return false;
-        }
-
-        // Validasi email
-        if (!filter_var($data['email'] ?? '', FILTER_VALIDATE_EMAIL)) {
-            return false;
-        }
-
-        // Validasi password minimal 8 karakter
-        if (strlen($data['password'] ?? '') < 8) {
-            return false;
-        }
-
-        return true;
+                                    Textarea::make('additional_notes')
+                                        ->label('Catatan Tambahan (Opsional)')
+                                        ->placeholder('Jika ada informasi tambahan yang perlu disampaikan kepada admin...')
+                                        ->rows(3)
+                                        ->helperText('Catatan khusus atau informasi tambahan untuk admin'),
+                                ]),
+                        ]),
+                ])
+                    ->columnSpanFull()
+                    ->skippable()
+                    ->persistStepInQueryString()
+            ]);
     }
 
     public function register(): ?RegistrationResponse
@@ -368,198 +365,114 @@ class Register extends BaseRegister
         try {
             $this->rateLimit(2);
         } catch (TooManyRequestsException $exception) {
-            \Filament\Notifications\Notification::make()
-                ->title(__('filament-panels::pages/auth/register.notifications.throttled.title', [
-                    'seconds' => $exception->secondsUntilAvailable,
-                    'minutes' => ceil($exception->secondsUntilAvailable / 60),
-                ]))
-                ->body(array_key_exists('body', __('filament-panels::pages/auth/register.notifications.throttled') ?: []) ? __('filament-panels::pages/auth/register.notifications.throttled.body', [
-                    'seconds' => $exception->secondsUntilAvailable,
-                    'minutes' => ceil($exception->secondsUntilAvailable / 60),
-                ]) : null)
-                ->danger()
-                ->send();
+            $this->getRateLimitedNotification($exception)?->send();
 
             return null;
         }
 
-        $data = $this->form->getState();
+        $user = $this->wrapInDatabaseTransaction(function () {
+            $this->callHook('beforeValidate');
 
-        // Manual validation
-        $errors = [];
+            $data = $this->form->getState();
 
-        if (empty($data['name'])) {
-            $errors['data.name'] = 'Nama lengkap wajib diisi.';
-        } elseif (strlen($data['name']) < 3) {
-            $errors['data.name'] = 'Nama minimal 3 karakter.';
-        }
+            $this->callHook('afterValidate');
 
-        if (empty($data['nik'])) {
-            $errors['data.nik'] = 'NIK wajib diisi.';
-        } elseif (!preg_match('/^[0-9]{16}$/', $data['nik'])) {
-            $errors['data.nik'] = 'NIK harus 16 digit angka.';
-        } elseif (User::where('nik', $data['nik'])->exists()) {
-            $errors['data.nik'] = 'NIK sudah terdaftar dalam sistem.';
-        }
+            $data = $this->mutateFormDataBeforeRegister($data);
 
-        if (empty($data['email'])) {
-            $errors['data.email'] = 'Email wajib diisi.';
-        } elseif (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
-            $errors['data.email'] = 'Format email tidak valid.';
-        } elseif (User::where('email', $data['email'])->exists()) {
-            $errors['data.email'] = 'Email sudah terdaftar.';
-        }
+            $this->callHook('beforeRegister');
 
-        if (empty($data['phone'])) {
-            $errors['data.phone'] = 'Nomor telepon wajib diisi.';
-        } elseif (!preg_match('/^08[0-9]{8,11}$/', $data['phone'])) {
-            $errors['data.phone'] = 'Nomor telepon harus diawali 08 dan berisi 10-13 digit.';
-        }
+            $user = $this->handleRegistration($data);
 
-        if (empty($data['kk_number'])) {
-            $errors['data.kk_number'] = 'Nomor KK wajib diisi.';
-        } elseif (!preg_match('/^[0-9]{16}$/', $data['kk_number'])) {
-            $errors['data.kk_number'] = 'Nomor KK harus 16 digit angka.';
-        }
+            $this->form->model($user)->saveRelationships();
 
-        if (empty($data['password'])) {
-            $errors['data.password'] = 'Kata sandi wajib diisi.';
-        } elseif (strlen($data['password']) < 8) {
-            $errors['data.password'] = 'Kata sandi minimal 8 karakter.';
-        } elseif ($data['password'] !== $data['password_confirmation']) {
-            $errors['data.password_confirmation'] = 'Konfirmasi kata sandi tidak cocok.';
-        }
+            $this->callHook('afterRegister');
 
-        // Validate conditional fields
-        if (($data['registration_type'] ?? '') !== 'family_member') {
-            if (empty($data['family_name'])) {
-                $errors['data.family_name'] = 'Nama kepala keluarga wajib diisi.';
-            }
-            if (empty($data['address'])) {
-                $errors['data.address'] = 'Alamat wajib diisi.';
-            }
-            if (empty($data['house_status'])) {
-                $errors['data.house_status'] = 'Status rumah wajib dipilih.';
-            }
-        }
+            return $user;
+        });
 
-        if (!empty($errors)) {
-            throw ValidationException::withMessages($errors);
-        }
+        event(new Registered($user));
 
-        // Validasi data menggunakan service
-        $validationService = app(RegistrationValidationService::class);
-        $validation = $validationService->validateRegistrationData($data);
+        // $this->sendEmailVerificationNotification($user);
 
-        if (!$validation['valid']) {
-            throw ValidationException::withMessages([
-                'general' => $validation['message']
-            ]);
-        }
+        Filament::auth()->login($user);
 
-        try {
-            DB::beginTransaction();
+        session()->regenerate();
 
-            // Use our custom user creation method
-            $user = $this->getUserFromData($data);
-
-            event(new Registered($user));
-
-            Filament::auth()->login($user);
-
-            session()->regenerate();
-
-            DB::commit();
-
-            \Filament\Notifications\Notification::make()
-                ->title('Registrasi Berhasil!')
-                ->body('Selamat datang di sistem perumahan. Akun Anda telah berhasil dibuat.')
-                ->success()
-                ->send();
-
-            return app(RegistrationResponse::class);
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            \Filament\Notifications\Notification::make()
-                ->title('Registrasi Gagal')
-                ->body('Terjadi kesalahan saat mendaftar: ' . $e->getMessage())
-                ->danger()
-                ->send();
-
-            throw $e;
-        }
+        return app(RegistrationResponse::class);
     }
 
-    protected function registerAsHeadOfFamily(array $data): User
+    protected function handleRegistration(array $data): Model
     {
-        // Buat keluarga baru
-        $family = Family::create([
+        $family = Family::where('kk_number', $data['kk_number'])->first();
+
+        // Prepare user data with safe fallbacks
+        $userData = [
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'nik' => $data['nik'],
+            'password' => Hash::make($data['password']),
+            'phone' => $data['phone'],
+            'house_number' => $data['house_number'],
             'kk_number' => $data['kk_number'],
-            'family_name' => $data['family_name'],
-            'address' => $data['address'],
-            'house_status' => $data['house_status'],
-        ]);
+            'telegram_chat_id' => ($data['enable_telegram'] ?? false) ? ($data['telegram_chat_id'] ?? null) : null,
+            'role' => 'resident',
+            'is_active' => false, // Requires admin approval
+        ];
 
-        // Buat user sebagai kepala keluarga
-        $user = User::create([
-            'name' => $data['name'],
-            'nik' => $data['nik'],
-            'email' => $data['email'],
-            'phone' => $data['phone'],
-            'password' => Hash::make($data['password']),
-            'family_id' => $family->id,
-        ]);
+        // Add additional fields only if they exist and are not empty
+        $additionalFields = [
+            'birth_date' => $data['birth_date'] ?? null,
+            'gender' => $data['gender'] ?? null,
+            'occupation' => $data['occupation'] ?? null,
+            'house_status' => $data['house_status'] ?? 'owner',
+            'emergency_contact' => !empty($data['emergency_contact']) ? $data['emergency_contact'] : null,
+            'emergency_contact_relation' => !empty($data['emergency_contact_relation']) ? $data['emergency_contact_relation'] : null,
+            'vehicle_1_plate' => !empty($data['vehicle_1_plate']) ? $data['vehicle_1_plate'] : null,
+            'vehicle_1_type' => !empty($data['vehicle_1_type']) ? $data['vehicle_1_type'] : null,
+            'vehicle_2_plate' => !empty($data['vehicle_2_plate']) ? $data['vehicle_2_plate'] : null,
+            'vehicle_2_type' => !empty($data['vehicle_2_type']) ? $data['vehicle_2_type'] : null,
+            'notify_announcements' => $data['notify_announcements'] ?? true,
+            'notify_financial' => $data['notify_financial'] ?? true,
+            'notify_events' => $data['notify_events'] ?? true,
+            'notify_security' => $data['notify_security'] ?? true,
+            'additional_notes' => !empty($data['additional_notes']) ? $data['additional_notes'] : null,
+        ];
 
-        // Buat record family member untuk kepala keluarga
-        FamilyMember::create([
-            'family_id' => $family->id,
-            'user_id' => $user->id,
-            'nik' => $data['nik'],
-            'name' => $data['name'],
-            'relationship' => 'Kepala Keluarga',
-            'is_head' => true,
-        ]);
+        // Merge data
+        $userData = array_merge($userData, $additionalFields);
 
-        return $user;
-    }
+        $user = User::create($userData);
 
-    protected function registerAsFamilyMember(array $data): User
-    {
-        // Cari keluarga berdasarkan nomor KK
-        $family = Family::where('kk_number', $data['kk_number'])->firstOrFail();
-
-        // Buat user sebagai anggota keluarga
-        $user = User::create([
-            'name' => $data['name'],
-            'nik' => $data['nik'],
-            'email' => $data['email'],
-            'phone' => $data['phone'],
-            'password' => Hash::make($data['password']),
-            'family_id' => $family->id,
-        ]);
-
-        // Buat record family member
-        FamilyMember::create([
-            'family_id' => $family->id,
-            'user_id' => $user->id,
-            'nik' => $data['nik'],
-            'name' => $data['name'],
-            'relationship' => 'Anggota Keluarga',
-            'is_head' => false,
-        ]);
-
-        return $user;
-    }
-
-    protected function getUserFromData(array $data): Authenticatable
-    {
-        // This method is required by the base class but we handle registration differently
-        // The actual user creation is done in register() method
-        if ($data['registration_type'] === 'family_member') {
-            return $this->registerAsFamilyMember($data);
-        } else {
-            return $this->registerAsHeadOfFamily($data);
+        // Link dengan family jika sudah ada
+        if ($family && !$family->user_id) {
+            $family->update(['user_id' => $user->id]);
         }
+
+        // Send notification to admin
+        Notification::make()
+            ->title('Pendaftaran Berhasil!')
+            ->body('Akun Anda akan diverifikasi dalam 1-2 hari kerja. Kami akan mengirim email konfirmasi setelah verifikasi selesai.')
+            ->success()
+            ->persistent()
+            ->send();
+
+        return $user;
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getLoginUrl();
+    }
+
+    protected function getLoginUrl(): string
+    {
+        return filament()->getLoginUrl();
+    }
+
+    public function mount(): void
+    {
+        parent::mount();
+
+        $this->form->fill();
     }
 }

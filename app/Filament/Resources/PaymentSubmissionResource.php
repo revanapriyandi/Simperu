@@ -150,18 +150,9 @@ class PaymentSubmissionResource extends Resource
                     ->label('Periode')
                     ->formatStateUsing(function (PaymentSubmission $record): string {
                         $months = [
-                            1 => 'Jan',
-                            2 => 'Feb',
-                            3 => 'Mar',
-                            4 => 'Apr',
-                            5 => 'Mei',
-                            6 => 'Jun',
-                            7 => 'Jul',
-                            8 => 'Ags',
-                            9 => 'Sep',
-                            10 => 'Okt',
-                            11 => 'Nov',
-                            12 => 'Des'
+                            1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr',
+                            5 => 'Mei', 6 => 'Jun', 7 => 'Jul', 8 => 'Ags',
+                            9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des'
                         ];
                         return $months[$record->period_month] . ' ' . $record->period_year;
                     })
@@ -191,8 +182,13 @@ class PaymentSubmissionResource extends Resource
                     ->label('Bukti')
                     ->square()
                     ->size(40),
+                Tables\Columns\TextColumn::make('submitted_at')
+                    ->label('Diajukan')
+                    ->dateTime('d M Y H:i')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('verifier.name')
                     ->label('Diverifikasi')
+                    ->placeholder('Belum diverifikasi')
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Dibuat')
@@ -208,7 +204,8 @@ class PaymentSubmissionResource extends Resource
                         'pending' => 'Menunggu',
                         'approved' => 'Disetujui',
                         'rejected' => 'Ditolak'
-                    ]),
+                    ])
+                    ->default('pending'),
                 Tables\Filters\SelectFilter::make('fee_type')
                     ->label('Jenis Iuran')
                     ->relationship('feeType', 'name'),
@@ -229,13 +226,113 @@ class PaymentSubmissionResource extends Resource
                     }),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('approve')
+                    ->label('Setujui')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->visible(fn($record) => $record->status === 'pending')
+                    ->requiresConfirmation()
+                    ->modalHeading('Setujui Pembayaran')
+                    ->modalDescription('Apakah Anda yakin ingin menyetujui pembayaran ini?')
+                    ->form([
+                        Forms\Components\RichEditor::make('admin_notes')
+                            ->label('Catatan Admin (Opsional)')
+                            ->placeholder('Tambahkan catatan verifikasi jika diperlukan...')
+                    ])
+                    ->action(function (PaymentSubmission $record, array $data) {
+                        $record->update([
+                            'status' => 'approved',
+                            'admin_notes' => $data['admin_notes'] ?? null,
+                            'verified_by' => auth()->id(),
+                            'verified_at' => now(),
+                        ]);
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->title('Pembayaran Disetujui')
+                            ->body('Pembayaran telah berhasil disetujui dan dicatat.')
+                            ->success()
+                            ->send();
+                    }),
+                
+                Tables\Actions\Action::make('reject')
+                    ->label('Tolak')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->visible(fn($record) => $record->status === 'pending')
+                    ->requiresConfirmation()
+                    ->modalHeading('Tolak Pembayaran')
+                    ->modalDescription('Berikan alasan penolakan pembayaran ini:')
+                    ->form([
+                        Forms\Components\RichEditor::make('admin_notes')
+                            ->label('Alasan Penolakan')
+                            ->required()
+                            ->placeholder('Jelaskan mengapa pembayaran ini ditolak...')
+                    ])
+                    ->action(function (PaymentSubmission $record, array $data) {
+                        $record->update([
+                            'status' => 'rejected',
+                            'admin_notes' => $data['admin_notes'],
+                            'verified_by' => auth()->id(),
+                            'verified_at' => now(),
+                        ]);
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->title('Pembayaran Ditolak')
+                            ->body('Pembayaran telah ditolak dengan alasan yang diberikan.')
+                            ->warning()
+                            ->send();
+                    }),
+                
+                Tables\Actions\ViewAction::make()
+                    ->label('Detail')
+                    ->modalHeading(fn($record) => 'Detail Pembayaran - ' . $record->feeType->name)
+                    ->modalContent(fn($record) => view('filament.admin.payment-detail-modal', compact('record')))
+                    ->modalWidth('2xl'),
+                
+                Tables\Actions\EditAction::make()
+                    ->visible(fn($record) => $record->status === 'pending'),
+                
+                Tables\Actions\Action::make('download_receipt')
+                    ->label('Unduh Bukti')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->visible(fn($record) => $record->receipt_path)
+                    ->url(fn($record) => \Storage::url($record->receipt_path))
+                    ->openUrlInNewTab(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('approve_selected')
+                        ->label('Setujui Terpilih')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->modalHeading('Setujui Pembayaran Terpilih')
+                        ->modalDescription('Apakah Anda yakin ingin menyetujui semua pembayaran yang dipilih?')
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records) {
+                            $records->each(function ($record) {
+                                if ($record->status === 'pending') {
+                                    $record->update([
+                                        'status' => 'approved',
+                                        'verified_by' => auth()->id(),
+                                        'verified_at' => now(),
+                                    ]);
+                                }
+                            });
+                            
+                            \Filament\Notifications\Notification::make()
+                                ->title('Pembayaran Batch Disetujui')
+                                ->body($records->count() . ' pembayaran telah berhasil disetujui.')
+                                ->success()
+                                ->send();
+                        }),
+                    Tables\Actions\DeleteBulkAction::make()
+                        ->visible(fn() => auth()->user()->isAdmin()),
                 ]),
-            ]);
+            ])
+            ->poll('30s')
+            ->deferLoading()
+            ->striped();
     }
 
     public static function getRelations(): array

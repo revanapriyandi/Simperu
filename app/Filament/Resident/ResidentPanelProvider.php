@@ -26,6 +26,7 @@ class ResidentPanelProvider extends PanelProvider
             ->id('resident')
             ->path('/resident')
             ->login()
+            ->registration(\App\Filament\Resident\Pages\Auth\Register::class)
             ->brandName('Villa Windaro Permai')
             ->brandLogo(asset('images/logo.png'))
             ->brandLogoHeight('2.5rem')
@@ -47,6 +48,7 @@ class ResidentPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Resident/Widgets'), for: 'App\\Filament\\Resident\\Widgets')
             ->pages([
                 Pages\Dashboard::class,
+                \App\Filament\Resident\Pages\FamilyProfile::class,
             ])
             ->widgets([
                 Widgets\AccountWidget::class,

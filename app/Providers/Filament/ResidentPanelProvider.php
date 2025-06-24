@@ -43,7 +43,7 @@ class ResidentPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resident/Resources'), for: 'App\\Filament\\Resident\\Resources')
             ->discoverPages(in: app_path('Filament/Resident/Pages'), for: 'App\\Filament\\Resident\\Pages')
             ->discoverWidgets(in: app_path('Filament/Resident/Widgets'), for: 'App\\Filament\\Resident\\Widgets')
-            ->viteTheme('resources/css/filament/resident/theme.css')
+            ->viteTheme('resources/css/filament/admin/theme.css')
             ->databaseTransactions()
             ->sidebarCollapsibleOnDesktop()
             ->databaseNotifications()

@@ -41,42 +41,30 @@ class PaymentSubmissionResource extends Resource
                             ->relationship('feeType', 'name')
                             ->searchable()
                             ->preload()
-                            ->required(),
-                        Forms\Components\Select::make('family_id')
-                            ->label('Keluarga')
-                            ->relationship(
-                                'family',
-                                'head_of_family',
-                                fn(Builder $query) =>
-                                $query->whereHas(
-                                    'user',
-                                    fn(Builder $q) =>
-                                    $q->where('id', Auth::id())
-                                )
-                            )
-                            ->searchable()
-                            ->preload()
                             ->required()
-                            ->default(function () {
-                                $userFamily = Family::whereHas(
-                                    'user',
-                                    fn(Builder $q) =>
-                                    $q->where('id', Auth::id())
-                                )->first();
-                                return $userFamily?->id;
-                            }),
+                            ->columnSpanFull(),
                         Forms\Components\TextInput::make('amount')
                             ->label('Jumlah Pembayaran')
                             ->required()
                             ->numeric()
                             ->prefix('Rp')
-                            ->step(1000),
+                            ->step(1000)
+                            ->placeholder('Masukkan jumlah yang dibayarkan'),
+                        Forms\Components\DatePicker::make('payment_date')
+                            ->label('Tanggal Pembayaran')
+                            ->required()
+                            ->default(today())
+                            ->maxDate(today()),
+                    ])->columns(2),
+
+                Forms\Components\Section::make('Periode Pembayaran')
+                    ->schema([
                         Forms\Components\Select::make('period_month')
                             ->label('Bulan Periode')
                             ->required()
                             ->options([
                                 1 => 'Januari',
-                                2 => 'Februari',
+                                2 => 'Februari', 
                                 3 => 'Maret',
                                 4 => 'April',
                                 5 => 'Mei',
@@ -88,7 +76,8 @@ class PaymentSubmissionResource extends Resource
                                 11 => 'November',
                                 12 => 'Desember'
                             ])
-                            ->default(date('n')),
+                            ->default(date('n'))
+                            ->helperText('Bulan untuk periode iuran yang dibayar'),
                         Forms\Components\Select::make('period_year')
                             ->label('Tahun Periode')
                             ->required()
@@ -96,10 +85,12 @@ class PaymentSubmissionResource extends Resource
                                 range(date('Y') - 1, date('Y') + 1),
                                 range(date('Y') - 1, date('Y') + 1)
                             ))
-                            ->default(date('Y')),
+                            ->default(date('Y'))
+                            ->helperText('Tahun untuk periode iuran yang dibayar'),
                         Forms\Components\Textarea::make('notes')
                             ->label('Catatan (Opsional)')
                             ->rows(3)
+                            ->placeholder('Tambahkan catatan jika diperlukan...')
                             ->columnSpanFull(),
                     ])->columns(2),
 

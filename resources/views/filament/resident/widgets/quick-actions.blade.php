@@ -1,208 +1,127 @@
 <x-filament-widgets::widget>
     <x-filament::section>
-        <x-slot name="heading">
+        {{-- <x-slot name="heading">
             <div class="flex items-center gap-x-3">
-                <div class="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
-                    <x-heroicon-m-bolt class="h-5 w-5 text-white" />
+                <div
+                    class="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-md">
+                    <x-heroicon-m-bolt class="h-6 w-6 text-white" />
                 </div>
-                <span class="text-lg font-semibold">Aksi Cepat</span>
             </div>
         </x-slot>
-        
-        <x-slot name="description">
-            Akses cepat ke fitur-fitur utama sistem informasi perumahan
-        </x-slot>
 
-        <!-- Welcome Message Card -->
-        <div class="resident-welcome-card mb-6">
-            <div class="flex items-start justify-between">
-                <div class="flex-1">
-                    <div class="flex items-center gap-3 mb-3">
-                        <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                            <x-heroicon-o-home-modern class="h-6 w-6 text-white" />
+        <!-- ALERT SECTION -->
+        <div class="space-y-4 mb-4">
+            @if ($totalOutstanding > 0)
+                <div
+                    class="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-xl p-5 flex items-start gap-4">
+                    <x-heroicon-o-exclamation-triangle
+                        class="w-7 h-7 text-red-600 dark:text-red-400 mt-1 flex-shrink-0" />
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-red-900 dark:text-red-100 mb-1">Tunggakan Pembayaran</h3>
+                        <p class="text-sm text-red-800 dark:text-red-200 mb-2">
+                            Anda memiliki tunggakan sebesar <strong>Rp
+                                {{ number_format($totalOutstanding, 0, ',', '.') }}</strong> untuk
+                            {{ count($outstandingPayments) }} iuran.
+                        </p>
+                        <div class="space-y-2">
+                            @foreach ($outstandingPayments as $outstanding)
+                                <div
+                                    class="flex justify-between items-center bg-white dark:bg-red-900/20 rounded-lg p-3">
+                                    <div>
+                                        <div class="font-medium text-red-900 dark:text-red-100">
+                                            {{ $outstanding['fee_type'] }}</div>
+                                        <div class="text-sm text-red-700 dark:text-red-300">
+                                            Jatuh tempo:
+                                            {{ \Carbon\Carbon::parse($outstanding['due_date'])->format('d M Y') }}
+                                        </div>
+                                    </div>
+                                    <div class="font-bold text-red-900 dark:text-red-100">
+                                        Rp {{ number_format($outstanding['amount'], 0, ',', '.') }}
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
-                        <div>
-                            <h2 class="text-xl font-bold text-white">
-                                Selamat datang, {{ $user->name }}! 👋
-                            </h2>
-                            <p class="text-white/80 text-sm">
-                                {{ now()->isoFormat('dddd, D MMMM Y') }}
-                            </p>
+                        <div class="mt-3">
+                            <a href="{{ route('filament.resident.resources.payment-submissions.create') }}"
+                                class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition">
+                                <x-heroicon-o-credit-card class="w-4 h-4 mr-2" />Upload Bukti Pembayaran
+                            </a>
                         </div>
                     </div>
-                    <p class="text-white/90 text-sm leading-relaxed max-w-lg">
-                        Sistem Informasi Manajemen Perumahan Villa Windaro Permai. 
-                        Kelola surat pengaduan, pembayaran, dan informasi perumahan dengan mudah dan efisien.
+                </div>
+            @endif
+            @if (!$hasCompleteProfile)
+                <div
+                    class="bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-xl p-5 flex items-start gap-4">
+                    <x-heroicon-o-exclamation-triangle
+                        class="w-7 h-7 text-yellow-600 dark:text-yellow-400 mt-1 flex-shrink-0" />
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-yellow-900 dark:text-yellow-100 mb-1">Data Keluarga Belum Lengkap
+                        </h3>
+                        <p class="text-sm text-yellow-800 dark:text-yellow-200 mb-2">Lengkapi data keluarga Anda untuk
+                            akses penuh layanan perumahan.</p>
+                        <a href="{{ \App\Filament\Resident\Pages\FamilyDataManagement\CompleteFamilyData::getUrl() }}"
+                            class="inline-flex items-center px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm font-medium rounded-lg transition">
+                            <x-heroicon-o-user-plus class="w-4 h-4 mr-2" />Lengkapi Data Keluarga
+                        </a>
+                    </div>
+                </div>
+            @endif
+        </div> --}}
+
+        <!-- WELCOME CARD -->
+        <div class="relative rounded-lg bg-primary-500 p-4 shadow-xl text-white mb-8 overflow-hidden">
+            <div class="flex flex-col md:flex-row items-start md:items-center gap-3">
+                <div class="flex-shrink-0 w-14 h-14 bg-white/20 rounded-lg flex items-center justify-center">
+                    <x-heroicon-o-home-modern class="h-8 w-8 text-white" />
+                </div>
+                <div>
+                    <h2 class="text-2xl font-extrabold mb-1">Selamat datang, {{ $user->name }}! 👋</h2>
+                    <p class="text-white/80 text-sm mb-2">{{ now()->isoFormat('dddd, D MMMM Y') }}</p>
+                    <p class="text-white/90 text-base leading-relaxed max-w-lg">
+                        Sistem Informasi Manajemen Perumahan Villa Windaro Permai. Kelola surat pengaduan, pembayaran,
+                        dan informasi perumahan dengan mudah dan efisien.
                     </p>
                 </div>
             </div>
-            
-            <!-- Quick Stats -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-white/20">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-6 border-t border-white/20">
                 <div class="text-center">
-                    <div class="text-2xl font-bold text-white">{{ $pendingLetters }}</div>
-                    <div class="text-white/80 text-xs uppercase tracking-wide">Surat Pending</div>
+                    <div class="text-2xl font-bold">{{ $approvedLetters }}</div>
+                    <div class="text-white/80 text-xs uppercase tracking-wide">Surat Disetujui</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-2xl font-bold text-white">{{ $pendingPayments }}</div>
-                    <div class="text-white/80 text-xs uppercase tracking-wide">Bayar Pending</div>
+                    <div class="text-2xl font-bold">{{ $verifiedPayments }}</div>
+                    <div class="text-white/80 text-xs uppercase tracking-wide">Bayar Verified</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-2xl font-bold text-white">{{ $unreadAnnouncements }}</div>
-                    <div class="text-white/80 text-xs uppercase tracking-wide">Info Baru</div>
+                    <div class="text-2xl font-bold">{{ $familyMembersCount }}</div>
+                    <div class="text-white/80 text-xs uppercase tracking-wide">Anggota Keluarga</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-2xl font-bold text-white">{{ now()->format('d') }}</div>
-                    <div class="text-white/80 text-xs uppercase tracking-wide">{{ now()->format('M Y') }}</div>
+                    @if ($totalOutstanding > 0)
+                        <div class="text-2xl font-bold text-yellow-300">{{ count($outstandingPayments) }}</div>
+                        <div class="text-yellow-200 text-xs uppercase tracking-wide">Tunggakan</div>
+                    @else
+                        <div class="text-2xl font-bold text-green-300">✓</div>
+                        <div class="text-green-200 text-xs uppercase tracking-wide">Lunas</div>
+                    @endif
                 </div>
             </div>
         </div>
 
-        <!-- Quick Actions Grid -->
-        <div class="resident-quick-actions">
-            <!-- Buat Surat Pengaduan -->
-            <a href="{{ route('filament.resident.resources.complaint-letters.create') }}" 
-               class="resident-action-card block group">
-                <div class="resident-action-icon group-hover:scale-110 transition-transform duration-300">
-                    <x-heroicon-o-document-plus class="h-6 w-6" />
-                </div>
-                <h3 class="resident-action-title">
-                    Ajukan Surat Pengaduan
-                </h3>
-                <p class="resident-action-description">
-                    Buat pengaduan baru untuk masalah di lingkungan perumahan seperti kebersihan, keamanan, atau fasilitas.
-                </p>
-                @if($pendingLetters > 0)
-                    <div class="mt-3 flex items-center gap-2">
-                        <div class="status-indicator status-pending">
-                            <x-heroicon-m-clock class="w-3 h-3" />
-                            {{ $pendingLetters }} menunggu persetujuan
-                        </div>
-                    </div>
-                @else
-                    <div class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                        ✨ Tidak ada surat pending
-                    </div>
-                @endif
-            </a>
-
-            <!-- Upload Bukti Pembayaran -->
-            <a href="{{ route('filament.resident.resources.payment-submissions.create') }}" 
-               class="resident-action-card block group">
-                <div class="resident-action-icon group-hover:scale-110 transition-transform duration-300">
-                    <x-heroicon-o-credit-card class="h-6 w-6" />
-                </div>
-                <h3 class="resident-action-title">
-                    Upload Bukti Bayar
-                </h3>
-                <p class="resident-action-description">
-                    Upload bukti pembayaran iuran bulanan, dana sosial, atau pembayaran lainnya untuk verifikasi.
-                </p>
-                @if($pendingPayments > 0)
-                    <div class="mt-3 flex items-center gap-2">
-                        <div class="status-indicator status-pending">
-                            <x-heroicon-m-clock class="w-3 h-3" />
-                            {{ $pendingPayments }} menunggu verifikasi
-                        </div>
-                    </div>
-                @else
-                    <div class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                        ✅ Semua pembayaran terverifikasi
-                    </div>
-                @endif
-            </a>
-
-            <!-- Lihat Pengumuman -->
-            <a href="{{ route('filament.resident.resources.announcements.index') }}" 
-               class="resident-action-card block group">
-                <div class="resident-action-icon group-hover:scale-110 transition-transform duration-300">
-                    <x-heroicon-o-megaphone class="h-6 w-6" />
-                </div>
-                <h3 class="resident-action-title">
-                    Pengumuman
-                </h3>
-                <p class="resident-action-description">
-                    Lihat pengumuman dan informasi terbaru dari pengurus perumahan mengenai kegiatan dan kebijakan.
-                </p>
-                @if($unreadAnnouncements > 0)
-                    <div class="mt-3 flex items-center gap-2">
-                        <div class="status-indicator status-in-progress">
-                            <x-heroicon-m-bell class="w-3 h-3" />
-                            {{ $unreadAnnouncements }} pengumuman baru
-                        </div>
-                    </div>
-                @else
-                    <div class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                        📰 Semua pengumuman sudah dibaca
-                    </div>
-                @endif
-            </a>
-
-            <!-- Data Keluarga -->
-            <a href="{{ route('filament.resident.resources.families.index') }}" 
-               class="resident-action-card block group">
-                <div class="resident-action-icon group-hover:scale-110 transition-transform duration-300">
-                    <x-heroicon-o-user-group class="h-6 w-6" />
-                </div>
-                <h3 class="resident-action-title">
-                    Data Keluarga
-                </h3>
-                <p class="resident-action-description">
-                    Kelola data keluarga, anggota rumah tangga, dan informasi kontak untuk keperluan administrasi.
-                </p>
-                <div class="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                    👨‍👩‍👧‍👦 Kelola data keluarga Anda
-                </div>
-            </a>
-
-            <!-- Laporan Keuangan -->
-            <a href="#" 
-               class="resident-action-card block group opacity-75 cursor-not-allowed">
-                <div class="resident-action-icon group-hover:scale-110 transition-transform duration-300">
-                    <x-heroicon-o-chart-bar class="h-6 w-6" />
-                </div>
-                <h3 class="resident-action-title">
-                    Laporan Keuangan
-                </h3>
-                <p class="resident-action-description">
-                    Lihat laporan keuangan perumahan, grafik pemasukan dan pengeluaran bulanan atau tahunan.
-                </p>
-                <div class="mt-3 text-xs text-amber-600 dark:text-amber-400">
-                    🚧 Segera hadir
-                </div>
-            </a>
-
-            <!-- Profile Settings -->
-            <a href="#" 
-               class="resident-action-card block group opacity-75 cursor-not-allowed">
-                <div class="resident-action-icon group-hover:scale-110 transition-transform duration-300">
-                    <x-heroicon-o-cog-6-tooth class="h-6 w-6" />
-                </div>
-                <h3 class="resident-action-title">
-                    Pengaturan Profil
-                </h3>
-                <p class="resident-action-description">
-                    Edit profil, ubah password, dan kelola preferensi notifikasi untuk pengalaman yang lebih personal.
-                </p>
-                <div class="mt-3 text-xs text-amber-600 dark:text-amber-400">
-                    🚧 Segera hadir
-                </div>
-            </a>
-        </div>
-
-        <!-- Tips Section -->
-        <div class="mt-8 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <!-- TIPS -->
+        <div class="mt-8 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-xl">
             <div class="flex items-start gap-3">
-                <div class="flex-shrink-0">
-                    <x-heroicon-o-light-bulb class="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
+                <x-heroicon-o-light-bulb class="h-6 w-6 text-blue-600 dark:text-blue-400 mt-1 flex-shrink-0" />
                 <div>
-                    <h4 class="font-medium text-blue-900 dark:text-blue-100 mb-2">💡 Tips Penggunaan</h4>
-                    <div class="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-                        <p>• <strong>Surat Pengaduan:</strong> Berikan deskripsi yang jelas dan lampirkan foto jika diperlukan</p>
-                        <p>• <strong>Bukti Pembayaran:</strong> Upload dalam format JPG/PNG dengan kualitas yang jelas</p>
-                        <p>• <strong>Notifikasi:</strong> Aktifkan notifikasi untuk mendapat update status surat Anda</p>
-                    </div>
+                    <h4 class="font-semibold text-blue-900 dark:text-blue-100 mb-2">💡 Tips & Informasi Penting</h4>
+                    <ul class="list-disc space-y-1 pl-5 text-sm text-blue-800 dark:text-blue-200">
+                        <li><b>Pengaduan:</b> Jelaskan masalah secara detail dan lampirkan bukti jika perlu.</li>
+                        <li><b>Pembayaran:</b> Upload bukti yang jelas, sertakan info transfer dan tunggu verifikasi
+                            admin.</li>
+                        <li><b>Penting:</b> Iuran dibayar tgl 1-10, surat disetujui bisa diunduh digital, bantuan:
+                            081-234-567-890.</li>
+                    </ul>
                 </div>
             </div>
         </div>

@@ -20,6 +20,8 @@ class PaymentSubmission extends Model
         'admin_notes',
         'verified_by',
         'verified_at',
+        'submitted_at',
+        'notes',
     ];
 
     protected $casts = [
@@ -28,6 +30,7 @@ class PaymentSubmission extends Model
         'amount' => 'decimal:2',
         'payment_date' => 'date',
         'verified_at' => 'datetime',
+        'submitted_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

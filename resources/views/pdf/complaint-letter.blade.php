@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Surat Pengaduan - {{ $complaint->letter_number }}</title>
+    <title>{{ $complaint->subject }} - {{ $complaint->letter_number }}</title>
     <style>
         @page {
             margin: 1cm 1.5cm 2.5cm 1.5cm;
@@ -253,21 +253,27 @@
     @endif
 
     <!-- Letterhead sesuai template -->
-    <div class="letterhead">
-        <div class="header-content">
-            <div class="logo-section">
-                @if ($logoSrc)
-                    <img src="{{ $logoSrc }}" alt="Logo {{ $housing_name }}" class="logo-img">
-                @else
-                    <div class="logo-placeholder">LOGO</div>
-                @endif
-            </div>
-            <div class="header-text">
-                <h1>{{ $housing_name }}</h1>
-                <div class="address">Alamat : {{ $housing_address }}</div>
+    <div style="width:100%;margin-bottom:20px;">
+        <div style="display:table;width:100%;">
+            <div style="display:table-row;">
+                <div style="display:table-cell;width:90px;vertical-align:middle;text-align:center;">
+                    @if ($logoSrc)
+                        <img src="{{ $logoSrc }}" alt="Logo {{ $housing_name }}"
+                            style="width:70px; height:70px; object-fit:contain;">
+                    @else
+                        <div
+                            style="width:70px; height:70px; border:2px solid #000; border-radius:8px; display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:10pt;">
+                            LOGO</div>
+                    @endif
+                </div>
+                <div style="display:table-cell;vertical-align:middle;text-align:center;padding-left:0;">
+                    <div style="font-size:18pt;font-weight:bold;letter-spacing:1px;line-height:1.2;">{{ $housing_name }}
+                    </div>
+                    <div style="font-size:11pt;margin-top:2px;">Alamat : {{ $housing_address }}</div>
+                </div>
             </div>
         </div>
-        <div class="header-divider"></div>
+        <hr style="height:3px;background:#000;border:none;margin:8px 0 0 0;">
     </div>
 
     <!-- Tanggal dan Lokasi -->
@@ -372,7 +378,7 @@
         </p>
 
         <div class="complaint-content">
-            {!! nl2br(e($complaint->content)) !!}
+            {!! $complaint->content !!}
         </div>
 
         <p>

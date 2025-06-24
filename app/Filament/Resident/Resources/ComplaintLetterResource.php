@@ -400,7 +400,7 @@ class ComplaintLetterResource extends Resource
                             $pdfPath = $pdfService->generatePdf($record);
                             $record->update(['pdf_path' => $pdfPath]);
 
-                            return redirect()->route('resident.download-letter', $record);
+                            return redirect()->route('complaint.download-pdf', $record);
                         }),
                     Tables\Actions\Action::make('verify')
                         ->label('Verifikasi Digital')
