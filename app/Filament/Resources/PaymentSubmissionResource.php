@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Facades\Storage;
 
 class PaymentSubmissionResource extends Resource
 {
@@ -165,8 +166,9 @@ class PaymentSubmissionResource extends Resource
                     ->label('Tanggal Bayar')
                     ->date('d M Y')
                     ->sortable(),
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
                     ->label('Status')
+                    ->badge()
                     ->colors([
                         'warning' => 'pending',
                         'success' => 'approved',
@@ -243,7 +245,7 @@ class PaymentSubmissionResource extends Resource
                         $record->update([
                             'status' => 'approved',
                             'admin_notes' => $data['admin_notes'] ?? null,
-                            'verified_by' => auth()->id(),
+                            'verified_by' => \Filament\Facades\Filament::auth()->id(),
                             'verified_at' => now(),
                         ]);
                         
@@ -272,7 +274,7 @@ class PaymentSubmissionResource extends Resource
                         $record->update([
                             'status' => 'rejected',
                             'admin_notes' => $data['admin_notes'],
-                            'verified_by' => auth()->id(),
+                            'verified_by' => \Filament\Facades\Filament::auth()->id(),
                             'verified_at' => now(),
                         ]);
                         
@@ -297,7 +299,7 @@ class PaymentSubmissionResource extends Resource
                     ->icon('heroicon-o-arrow-down-tray')
                     ->color('gray')
                     ->visible(fn($record) => $record->receipt_path)
-                    ->url(fn($record) => \Storage::url($record->receipt_path))
+                    ->url(fn($record) => Storage::url($record->receipt_path))
                     ->openUrlInNewTab(),
             ])
             ->bulkActions([
@@ -314,7 +316,7 @@ class PaymentSubmissionResource extends Resource
                                 if ($record->status === 'pending') {
                                     $record->update([
                                         'status' => 'approved',
-                                        'verified_by' => auth()->id(),
+                                        'verified_by' => \Filament\Facades\Filament::auth()->id(),
                                         'verified_at' => now(),
                                     ]);
                                 }
