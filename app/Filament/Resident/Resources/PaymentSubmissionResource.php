@@ -26,9 +26,9 @@ class PaymentSubmissionResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Pengajuan Pembayaran';
 
-    protected static ?string $navigationGroup = 'Keuangan';
+    protected static ?string $navigationGroup = 'Administrasi Keuangan';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 20;
 
     public static function form(Form $form): Form
     {

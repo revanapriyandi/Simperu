@@ -11,6 +11,9 @@
     {{-- About Section --}}
     @include('livewire.partials.about')
 
+    {{-- Visi & Misi Section --}}
+    @include('livewire.partials.visi-misi')
+
     {{-- Benefits Section --}}
     @include('livewire.partials.benefits')
 

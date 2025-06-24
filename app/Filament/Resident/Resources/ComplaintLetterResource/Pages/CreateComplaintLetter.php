@@ -4,7 +4,8 @@ namespace App\Filament\Resident\Resources\ComplaintLetterResource\Pages;
 
 use App\Filament\Resident\Resources\ComplaintLetterResource;
 use App\Models\ComplaintLetter;
-use App\Services\ComplaintLetterPdfService;
+use App\Models\LetterCategory;
+use App\Services\DigitalSignatureService;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Auth;
@@ -18,42 +19,65 @@ class CreateComplaintLetter extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $pdfService = new ComplaintLetterPdfService();
+        // Remove the agreement checkbox from data
+        unset($data['agreement']);
+        
+        // Generate letter number if not set
+        if (empty($data['letter_number']) && !empty($data['category_id'])) {
+            $category = LetterCategory::find($data['category_id']);
+            if ($category) {
+                $data['letter_number'] = $this->generateLetterNumber($category->code);
+            }
+        }
 
         // Add required fields
         $data['user_id'] = Auth::id();
         $data['submitted_by'] = Auth::id();
-        $data['letter_number'] = $pdfService->generateLetterNumber();
         $data['letter_date'] = Carbon::now()->format('Y-m-d');
         $data['submitted_at'] = Carbon::now();
-        $data['recipient'] = 'Pengurus Perumahan Villa Windaro Permai';
-        $data['description'] = $data['content']; // Map content to description
+        $data['description'] = strip_tags($data['content']); // Clean HTML for description
         $data['status'] = 'submitted';
+        $data['approval_status'] = 'pending';
+        
+        // Set default recipient if not provided
+        if (empty($data['recipient'])) {
+            $data['recipient'] = 'Pengurus Perumahan Villa Windaro Permai';
+        }
 
         return $data;
+    }
+    
+    private function generateLetterNumber($categoryCode): string
+    {
+        $count = ComplaintLetter::whereHas('category', function($query) use ($categoryCode) {
+            $query->where('code', $categoryCode);
+        })->whereYear('created_at', now()->year)->count() + 1;
+        
+        return sprintf('%03d/%s/PVWP/%s/%s', $count, $categoryCode, strtoupper(now()->format('m')), now()->year);
     }
 
     protected function afterCreate(): void
     {
-        $pdfService = new ComplaintLetterPdfService();
+        $signatureService = new DigitalSignatureService();
 
         try {
-            // Generate PDF
-            $pdfPath = $pdfService->generatePdf($this->record);
+            // Generate initial PDF (unsigned)
+            $pdfPath = $signatureService->generateSignedPDF($this->record);
 
             // Update record with PDF path
             $this->record->update(['pdf_path' => $pdfPath]);
 
             // Show success notification
             Notification::make()
-                ->title('Pengaduan berhasil dibuat!')
-                ->body('Surat pengaduan Anda telah dibuat dan dapat diunduh.')
+                ->title('🎉 Pengaduan berhasil diajukan!')
+                ->body('Surat pengaduan Anda telah dibuat dengan nomor ' . $this->record->letter_number . '. Menunggu persetujuan dari admin.')
                 ->success()
+                ->duration(7000)
                 ->actions([
-                    \Filament\Notifications\Actions\Action::make('download')
-                        ->label('Unduh Surat PDF')
-                        ->url(route('complaint.download-pdf', $this->record->id))
-                        ->openUrlInNewTab()
+                    \Filament\Notifications\Actions\Action::make('view')
+                        ->label('Lihat Detail')
+                        ->url($this->getResource()::getUrl('view', ['record' => $this->record]))
+                        ->markAsRead(),
                 ])
                 ->send();
         } catch (\Exception $e) {
@@ -61,8 +85,8 @@ class CreateComplaintLetter extends CreateRecord
             Log::error('Failed to generate complaint PDF: ' . $e->getMessage());
 
             Notification::make()
-                ->title('Pengaduan berhasil dibuat')
-                ->body('Namun terjadi kesalahan saat membuat PDF. Silakan hubungi admin.')
+                ->title('✅ Pengaduan berhasil dibuat')
+                ->body('Nomor surat: ' . $this->record->letter_number . '. PDF akan dibuat setelah disetujui admin.')
                 ->warning()
                 ->send();
         }

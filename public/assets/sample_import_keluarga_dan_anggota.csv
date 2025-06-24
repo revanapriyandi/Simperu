@@ -1,0 +1,9 @@
+# Data Keluarga
+kk_number,head_of_family,wife_name,house_block,phone_1,phone_2,house_status,status,family_members_count,license_plate_1,license_plate_2
+3201234567892001,Contoh Kepala,Contoh Istri,C-01,081234567800,,owner,active,3,B 1234 XYZ,
+
+# Data Anggota Keluarga (hubungkan dengan kk_number)
+kk_number,name,nik,relationship,birth_date,gender,occupation
+3201234567892001,Contoh Kepala,3201234567892001,head,1980-01-01,male,Pegawai Negeri
+3201234567892001,Contoh Istri,3201234567892002,wife,1982-02-02,female,Ibu Rumah Tangga
+3201234567892001,Contoh Anak,3201234567892003,child,2010-03-03,male,Pelajar

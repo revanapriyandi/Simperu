@@ -1,0 +1,210 @@
+/* Custom CSS untuk Filament Dashboard */
+
+/* Responsive Table Improvements */
+.fi-ta-content {
+    overflow-x: auto;
+}
+
+.fi-ta-split {
+    min-width: 280px;
+}
+
+/* Badge Improvements */
+.fi-badge {
+    font-weight: 600;
+    letter-spacing: 0.025em;
+}
+
+/* Card Layout Improvements */
+.fi-wi-card {
+    border-radius: 12px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease-in-out;
+}
+
+.fi-wi-card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transform: translateY(-1px);
+}
+
+/* Status Badges */
+.priority-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Action Group Improvements */
+.fi-ac-group-btn {
+    border-radius: 8px;
+    transition: all 0.15s ease-in-out;
+}
+
+.fi-ac-group-btn:hover {
+    transform: scale(1.02);
+}
+
+/* Modal Improvements */
+.fi-modal-content {
+    border-radius: 16px;
+}
+
+/* Form Improvements */
+.fi-fo-section {
+    border-radius: 12px;
+    border: 1px solid rgb(229 231 235);
+}
+
+.fi-fo-section-header {
+    border-radius: 12px 12px 0 0;
+}
+
+/* Stats Widget Improvements */
+.fi-wi-stats-overview-stat {
+    border-radius: 12px;
+    transition: all 0.2s ease-in-out;
+}
+
+.fi-wi-stats-overview-stat:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1),
+        0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Responsive Mobile Improvements */
+@media (max-width: 768px) {
+    .fi-ta-split {
+        min-width: 240px;
+    }
+
+    .fi-ta-stack {
+        gap: 0.5rem;
+    }
+
+    .fi-wi-stats-overview {
+        grid-template-columns: 1fr;
+    }
+
+    .fi-ta-header-toolbar {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+}
+
+/* Dark Mode Improvements */
+.dark .fi-wi-card {
+    border: 1px solid rgb(55 65 81);
+}
+
+.dark .fi-fo-section {
+    border-color: rgb(55 65 81);
+}
+
+/* Custom Colors for Status */
+.status-submitted {
+    background-color: rgb(243 244 246);
+    color: rgb(75 85 99);
+}
+
+.status-in-review {
+    background-color: rgb(219 234 254);
+    color: rgb(29 78 216);
+}
+
+.status-in-progress {
+    background-color: rgb(254 249 195);
+    color: rgb(161 98 7);
+}
+
+.status-resolved {
+    background-color: rgb(220 252 231);
+    color: rgb(22 101 52);
+}
+
+.status-closed {
+    background-color: rgb(254 226 226);
+    color: rgb(153 27 27);
+}
+
+/* Tooltip Improvements */
+.fi-tooltip {
+    font-size: 0.875rem;
+    max-width: 320px;
+    word-wrap: break-word;
+}
+
+/* Loading States */
+.loading-state {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Animation for new items */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fi-ta-row {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Custom scrollbar */
+.fi-ta-content::-webkit-scrollbar {
+    height: 6px;
+}
+
+.fi-ta-content::-webkit-scrollbar-track {
+    background: rgb(243 244 246);
+    border-radius: 3px;
+}
+
+.fi-ta-content::-webkit-scrollbar-thumb {
+    background: rgb(156 163 175);
+    border-radius: 3px;
+}
+
+.fi-ta-content::-webkit-scrollbar-thumb:hover {
+    background: rgb(107 114 128);
+}
+
+/* Print Styles */
+@media print {
+    .fi-header,
+    .fi-sidebar,
+    .fi-topbar,
+    .fi-pagination {
+        display: none !important;
+    }
+
+    .fi-main {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .fi-wi-card {
+        box-shadow: none !important;
+        border: 1px solid #000 !important;
+    }
+}

@@ -12,7 +12,7 @@ class ListAnnouncements extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            // No create action for residents
+            // No actions for residents - they can only view announcements
         ];
     }
 }

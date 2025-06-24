@@ -16,13 +16,17 @@ class ComplaintLetterPdfService
         $complaintLetter->load(['user', 'category']);
 
         // Get housing association settings
-        $housingName = LandingPageSetting::where('key', 'housing_name')->value('value') ?? 'Perumahan Villa Windaro Permai';
-        $housingAddress = LandingPageSetting::where('key', 'housing_address')->value('value') ?? 'Jl. Amarta, RT 03/RW 01 Kelurahan Delima, Kecamatan Binawidya, Kota Pekanbaru, Riau 28292';
+        $housingName = LandingPageSetting::where('key', 'site_name')->value('value') ?? 'SIMPERU';
+        $housingAddress = LandingPageSetting::where('key', 'contact_address')->value('value') ?? 'Jl. Amarta, RT 03/RW 01 Kelurahan Delima, Kecamatan Binawidya, Kota Pekanbaru, Riau 28292';
+        $contactPhone = LandingPageSetting::where('key', 'contact_phone')->value('value') ?? '+62 812-3456-7890';
+        $contactEmail = LandingPageSetting::where('key', 'contact_email')->value('value') ?? 'info@simperu.id';
 
         // Prepare data for PDF
         $data = [
             'housing_name' => $housingName,
             'housing_address' => $housingAddress,
+            'contact_phone' => $contactPhone,
+            'contact_email' => $contactEmail,
             'letter_number' => $complaintLetter->letter_number,
             'letter_date' => Carbon::parse($complaintLetter->letter_date)->locale('id')->isoFormat('D MMMM Y'),
             'current_date' => Carbon::parse($complaintLetter->submitted_at)->locale('id')->isoFormat('D MMMM Y'),
@@ -38,11 +42,13 @@ class ComplaintLetterPdfService
             ->setOptions([
                 'isHtml5ParserEnabled' => true,
                 'isRemoteEnabled' => true,
-                'defaultFont' => 'sans-serif',
-                'margin_top' => 20,
-                'margin_bottom' => 20,
-                'margin_left' => 20,
-                'margin_right' => 20,
+                'defaultFont' => 'Times-Roman',
+                'margin_top' => 71,
+                'margin_bottom' => 71,
+                'margin_left' => 71,
+                'margin_right' => 71,
+                'dpi' => 96,
+                'enable_php' => true,
             ]);
 
         // Generate filename

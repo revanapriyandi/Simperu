@@ -78,13 +78,13 @@ class ConfigureTelegramWebhook extends Command
     {
         file_put_contents($this->laravel->environmentFilePath(), preg_replace(
             $this->secretReplacementPattern(),
-            'TELEGRAM_WEBHOOK_URL=' . $webhookSecret,
+            'TELEGRAM_BOT_WEBHOOK=' . $webhookSecret,
             file_get_contents($this->laravel->environmentFilePath())
         ));
     }
 
     /**
-     * Get a regex pattern that will match env TELEGRAM_WEBHOOK_URL with any random key.
+     * Get a regex pattern that will match env TELEGRAM_BOT_WEBHOOK with any random key.
      *
      * @return string
      */
@@ -92,7 +92,7 @@ class ConfigureTelegramWebhook extends Command
     {
         $escaped = preg_quote('=' . $this->laravel['config']['services.telegram-bot-api.webhook'], '/');
 
-        return "/^TELEGRAM_WEBHOOK_URL{$escaped}/m";
+        return "/^TELEGRAM_BOT_WEBHOOK{$escaped}/m";
     }
 
     /**

@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             LandingPageSeeder::class,
             FeeTypeSeeder::class,
             LetterCategorySeeder::class,
+            FamilyDataSeeder::class, // New seeder for CSV data
             FamilySeeder::class,
             AnnouncementSeeder::class,
             ActivityPhotoSeeder::class,

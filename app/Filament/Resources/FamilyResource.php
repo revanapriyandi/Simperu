@@ -200,7 +200,7 @@ class FamilyResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\MembersRelationManager::class,
         ];
     }
 
@@ -210,6 +210,7 @@ class FamilyResource extends Resource
             'index' => Pages\ListFamilies::route('/'),
             'create' => Pages\CreateFamily::route('/create'),
             'edit' => Pages\EditFamily::route('/{record}/edit'),
+            'view' => Pages\ViewFamily::route('/{record}'),
         ];
     }
 }

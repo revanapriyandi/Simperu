@@ -26,13 +26,23 @@ class ComplaintLetter extends Model
         'processed_by',
         'processed_at',
         'pdf_path',
+        'digital_signature',
+        'signature_hash',
+        'signed_at',
+        'signed_by',
+        'approval_status',
+        'approval_notes',
+        'template_data',
+        'barcode_path',
     ];
 
     protected $casts = [
         'letter_date' => 'date',
         'submitted_at' => 'datetime',
         'processed_at' => 'datetime',
+        'signed_at' => 'datetime',
         'attachments' => 'array',
+        'template_data' => 'array',
     ];
 
     public function user(): BelongsTo
@@ -48,12 +58,37 @@ class ComplaintLetter extends Model
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {
-            'pending' => 'Menunggu',
-            'processed' => 'Diproses',
-            'in_progress' => 'Sedang Berlangsung',
-            'completed' => 'Selesai',
-            'rejected' => 'Ditolak',
+            'submitted' => 'Diajukan',
+            'in_review' => 'Sedang Ditinjau',
+            'in_progress' => 'Sedang Diproses',
+            'resolved' => 'Selesai',
+            'closed' => 'Ditutup',
             default => $this->status,
         };
+    }
+
+    public function getApprovalStatusLabelAttribute(): string
+    {
+        return match ($this->approval_status) {
+            'pending' => 'Menunggu Persetujuan',
+            'approved' => 'Disetujui',
+            'rejected' => 'Ditolak',
+            default => $this->approval_status,
+        };
+    }
+
+    public function signedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'signed_by');
+    }
+
+    public function processedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'processed_by');
+    }
+
+    public function submittedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'submitted_by');
     }
 }

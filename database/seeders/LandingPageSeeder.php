@@ -20,7 +20,7 @@ class LandingPageSeeder extends Seeder
             // General Settings
             [
                 'key' => 'site_name',
-                'value' => 'SIMPERU',
+                'value' => 'Perumahan Villa Windaro Permai',
                 'type' => 'text',
                 'group' => 'general',
                 'label' => 'Site Name',
@@ -70,7 +70,7 @@ class LandingPageSeeder extends Seeder
             ],
             [
                 'key' => 'contact_address',
-                'value' => 'Jl. Digital Raya No. 123, Kota Cyber, Indonesia',
+                'value' => 'Jl. Amarta, RT 03/RW 01 Kelurahan Delima, Kecamatan Binawidya, Kota Pekanbaru, Riau 28292',
                 'type' => 'textarea',
                 'group' => 'contact',
                 'label' => 'Address',
